@@ -3,108 +3,233 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b0d12">
+<meta name="theme-color" content="#090b10">
 <meta name="description" content="Piloto do Mês — seu dinheiro, seu mês, uma direção clara.">
 <title>Piloto do Mês</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 :root{--bg:#090b10;--card:#141821;--card2:#10131a;--text:#f7f8fb;--muted:#9ba5b7;--line:#272d3a;--accent:#7c5cff;--good:#35d39a;--warn:#f4bd4f;--bad:#ff657d}
-*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}.app{max-width:540px;margin:auto;padding:18px 16px 34px}
-button,input,select{font:inherit}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}.brand{font-size:18px;font-weight:900;letter-spacing:-.6px}.brand b{color:var(--accent)}.pill{font-size:11px;color:var(--muted);border:1px solid var(--line);padding:7px 10px;border-radius:99px}
-.screen{display:none}.screen.active{display:block}h1{font-size:34px;line-height:1.04;letter-spacing:-1.6px;margin:0 0 9px}.sub{color:var(--muted);line-height:1.5;margin:0 0 20px}.back{background:none;border:0;color:var(--muted);padding:4px 0;margin-bottom:18px}
-.hero{background:linear-gradient(145deg,#181c2b,#10131a);border:1px solid var(--line);border-radius:27px;padding:23px;margin-bottom:12px}.label{font-size:12px;color:var(--muted);letter-spacing:.2px}.amount{font-size:49px;font-weight:900;letter-spacing:-2.4px;margin:4px 0 2px}.status{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:750}.dot{width:9px;height:9px;border-radius:50%;background:var(--good)}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px}.value{font-size:20px;font-weight:850;margin-top:5px}.muted{color:var(--muted)}
-.btn{width:100%;border:0;border-radius:17px;padding:15px 16px;font-weight:850;color:#fff;background:var(--accent);cursor:pointer}.btn.secondary{background:var(--card);border:1px solid var(--line)}.btn.good{background:#17372f}.btn.danger{background:#351923}.btn+.btn{margin-top:9px}
-.section-title{font-size:15px;font-weight:850;margin:22px 2px 10px}.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.action{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;text-align:left;color:var(--text);font-weight:800;cursor:pointer}.action span{display:block;font-size:22px;margin-bottom:5px}.action small{color:var(--muted);font-weight:500}
-.field{margin-bottom:13px}.field label{display:block;color:var(--muted);font-size:13px;margin-bottom:7px}input,select{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:14px;padding:14px;outline:none}input:focus,select:focus{border-color:var(--accent)}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.result{background:var(--card);border:1px solid var(--line);border-radius:21px;padding:19px;margin-top:14px}.result h3{margin:0 0 8px;font-size:18px}.result p{color:var(--muted);line-height:1.5;font-size:13px}.big{font-size:28px;font-weight:900}.tag{display:inline-block;padding:6px 9px;border-radius:99px;font-size:11px;font-weight:800;margin-bottom:10px;background:#1d2930;color:var(--good)}.tag.warn{background:#302916;color:var(--warn)}.tag.bad{background:#351923;color:var(--bad)}
-.list{display:grid;gap:9px;margin-top:10px}.item{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:15px;padding:13px}.item strong{display:block}.item small{color:var(--muted)}.item button{background:none;border:0;color:var(--bad);font-size:12px}
-.nav{position:sticky;bottom:10px;margin-top:22px;background:rgba(20,24,33,.95);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:7px;display:flex;gap:6px}.nav button{flex:1;background:none;border:0;color:var(--muted);padding:9px 4px;border-radius:14px;font-size:12px;cursor:pointer}.nav button.active{background:#202638;color:#fff;font-weight:850}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.app{max-width:540px;margin:auto;padding:18px 16px 34px}
+button,input{font:inherit}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.brand{font-size:18px;font-weight:900;letter-spacing:-.6px}
+.brand b{color:var(--accent)}
+.pill{font-size:11px;color:var(--muted);border:1px solid var(--line);padding:7px 10px;border-radius:99px}
+.screen{display:none}
+.screen.active{display:block}
+h1{font-size:34px;line-height:1.04;letter-spacing:-1.6px;margin:0 0 9px}
+.sub{color:var(--muted);line-height:1.5;margin:0 0 20px}
+.back{background:none;border:0;color:var(--muted);padding:4px 0;margin-bottom:18px;cursor:pointer}
+.hero{background:linear-gradient(145deg,#181c2b,#10131a);border:1px solid var(--line);border-radius:27px;padding:23px;margin-bottom:12px}
+.label{font-size:12px;color:var(--muted);letter-spacing:.2px}
+.amount{font-size:49px;font-weight:900;letter-spacing:-2.4px;margin:4px 0 2px}
+.status{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:750}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--good)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px}
+.value{font-size:20px;font-weight:850;margin-top:5px}
+.btn{width:100%;border:0;border-radius:17px;padding:15px 16px;font-weight:850;color:#fff;background:var(--accent);cursor:pointer}
+.btn.secondary{background:var(--card);border:1px solid var(--line)}
+.btn.good{background:#17372f}
+.btn.danger{background:#351923}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn+.btn{margin-top:9px}
+.section-title{font-size:15px;font-weight:850;margin:22px 2px 10px}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.action{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;text-align:left;color:var(--text);font-weight:800;cursor:pointer}
+.action span{display:block;font-size:22px;margin-bottom:5px}
+.action small{color:var(--muted);font-weight:500}
+.field{margin-bottom:13px}
+.field label{display:block;color:var(--muted);font-size:13px;margin-bottom:7px}
+input{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:14px;padding:14px;outline:none}
+input:focus{border-color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.result{background:var(--card);border:1px solid var(--line);border-radius:21px;padding:19px;margin-top:14px}
+.result h3{margin:0 0 8px;font-size:18px}
+.result p{color:var(--muted);line-height:1.5;font-size:13px}
+.big{font-size:28px;font-weight:900}
+.tag{display:inline-block;padding:6px 9px;border-radius:99px;font-size:11px;font-weight:800;margin-bottom:10px;background:#1d2930;color:var(--good)}
+.tag.warn{background:#302916;color:var(--warn)}
+.tag.bad{background:#351923;color:var(--bad)}
+.nav{position:sticky;bottom:10px;margin-top:22px;background:rgba(20,24,33,.95);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:7px;display:flex;gap:6px}
+.nav button{flex:1;background:none;border:0;color:var(--muted);padding:9px 4px;border-radius:14px;font-size:12px;cursor:pointer}
+.nav button.active{background:#202638;color:#fff;font-weight:850}
 .toast{position:fixed;left:16px;right:16px;bottom:96px;max-width:508px;margin:auto;background:#fff;color:#111;padding:13px 15px;border-radius:15px;font-size:13px;font-weight:750;display:none;z-index:5}
-.empty{color:var(--muted);font-size:13px;padding:12px 2px}
+.auth{min-height:82vh;display:flex;align-items:center}
+.auth-card{width:100%;background:var(--card);border:1px solid var(--line);border-radius:27px;padding:24px}
+.auth-logo{font-size:25px;font-weight:950;margin-bottom:18px}
+.auth-logo b{color:var(--accent)}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--card2);padding:4px;border-radius:14px;margin-bottom:20px}
+.auth-tabs button{border:0;background:none;color:var(--muted);padding:11px;border-radius:11px;font-weight:800}
+.auth-tabs button.active{background:#202638;color:#fff}
+.auth-message{font-size:13px;line-height:1.45;margin-top:12px;color:var(--muted)}
+.account{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;margin-bottom:16px}
+.account small{color:var(--muted);display:block;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.logout{background:none;border:0;color:var(--bad);font-size:12px;font-weight:800}
+.loading{text-align:center;color:var(--muted);padding:40px 0}
 </style>
 </head>
+
 <body>
 <div class="app">
-<div class="top"><div class="brand">PILOTO<b>.</b></div><div class="pill">Seu mês sob controle</div></div>
 
-<section id="home" class="screen active">
-<h1>Quanto você pode gastar hoje?</h1>
-<p class="sub">O Piloto olha para o seu dinheiro e para o que ainda vem pela frente.</p>
-<div class="hero">
-<div class="label">LIMITE RECOMENDADO HOJE</div>
-<div class="amount" id="daily">R$ 0,00</div>
-<div class="status"><span class="dot"></span><span id="status">Configure seu mês para começar</span></div>
+<div id="authScreen" class="auth">
+  <div class="auth-card">
+    <div class="auth-logo">PILOTO<b>.</b></div>
+    <h1 id="authTitle">Seu mês sob controle.</h1>
+    <p class="sub" id="authSub">Entre para salvar seu planejamento e acessar seus dados de qualquer lugar.</p>
+
+    <div class="auth-tabs">
+      <button id="tabLogin" class="active" onclick="setAuthMode('login')">Entrar</button>
+      <button id="tabSignup" onclick="setAuthMode('signup')">Criar conta</button>
+    </div>
+
+    <div class="field">
+      <label>E-mail</label>
+      <input id="authEmail" type="email" autocomplete="email" placeholder="voce@email.com">
+    </div>
+
+    <div class="field">
+      <label>Senha</label>
+      <input id="authPassword" type="password" autocomplete="current-password" placeholder="Mínimo de 6 caracteres">
+    </div>
+
+    <button id="authButton" class="btn" onclick="handleAuth()">ENTRAR</button>
+    <div id="authMessage" class="auth-message"></div>
+  </div>
 </div>
-<div class="grid">
-<div class="card"><div class="label">Dinheiro livre</div><div class="value" id="free">R$ 0,00</div></div>
-<div class="card"><div class="label">Protegido</div><div class="value" id="reserve">R$ 0,00</div></div>
-<div class="card"><div class="label">Compromissos</div><div class="value" id="bills">R$ 0,00</div></div>
-<div class="card"><div class="label">Até receber</div><div class="value" id="days">0 dias</div></div>
+
+<div id="appScreen" style="display:none">
+  <div class="top">
+    <div class="brand">PILOTO<b>.</b></div>
+    <div class="pill">Seu mês sob controle</div>
+  </div>
+
+  <div id="accountBox" class="account">
+    <div>
+      <small id="userEmail">...</small>
+    </div>
+    <button class="logout" onclick="logout()">SAIR</button>
+  </div>
+
+  <div id="loadingBox" class="loading">Carregando seu Piloto...</div>
+
+  <div id="mainApp" style="display:none">
+
+    <section id="home" class="screen active">
+      <h1>Quanto você pode gastar hoje?</h1>
+      <p class="sub">O Piloto olha para o seu dinheiro e para o que ainda vem pela frente.</p>
+
+      <div class="hero">
+        <div class="label">LIMITE RECOMENDADO HOJE</div>
+        <div class="amount" id="daily">R$ 0,00</div>
+        <div class="status"><span class="dot" id="statusDot"></span><span id="status">Configure seu mês para começar</span></div>
+      </div>
+
+      <div class="grid">
+        <div class="card"><div class="label">Dinheiro livre</div><div class="value" id="free">R$ 0,00</div></div>
+        <div class="card"><div class="label">Protegido</div><div class="value" id="reserve">R$ 0,00</div></div>
+        <div class="card"><div class="label">Compromissos</div><div class="value" id="bills">R$ 0,00</div></div>
+        <div class="card"><div class="label">Até receber</div><div class="value" id="days">0 dias</div></div>
+      </div>
+
+      <div class="section-title">Ações rápidas</div>
+      <div class="action-grid">
+        <button class="action" onclick="show('expense')"><span>💸</span>Gastei<small>Registrar gasto</small></button>
+        <button class="action" onclick="show('incomeAdd')"><span>💰</span>Recebi<small>Registrar entrada</small></button>
+        <button class="action" onclick="show('buy')"><span>🛒</span>Posso comprar?<small>Simular antes</small></button>
+        <button class="action" onclick="show('future')"><span>🔮</span>Meu futuro<small>Ver projeção</small></button>
+      </div>
+
+      <div style="margin-top:14px">
+        <button class="btn secondary" onclick="show('setup')">⚙️ Ajustar meu mês</button>
+      </div>
+    </section>
+
+    <section id="setup" class="screen">
+      <button class="back" onclick="show('home')">← Voltar</button>
+      <h1>Vamos pilotar seu mês.</h1>
+      <p class="sub">Você controla os dados. O Piloto faz as contas.</p>
+
+      <div class="field"><label>Quanto você tem disponível agora?</label><input id="balance" inputmode="decimal" placeholder="Ex.: 2500"></div>
+      <div class="row">
+        <div class="field"><label>Próximo recebimento</label><input id="payday" type="date"></div>
+        <div class="field"><label>Valor que vai receber</label><input id="income" inputmode="decimal" placeholder="Ex.: 3000"></div>
+      </div>
+      <div class="field"><label>Quanto você quer proteger?</label><input id="reserveIn" inputmode="decimal" placeholder="Ex.: 300"></div>
+      <div class="field"><label>Contas que ainda serão pagas antes de receber</label><input id="billsIn" inputmode="decimal" placeholder="Ex.: 1200"></div>
+
+      <div id="setupError" class="result" style="display:none">
+        <span class="tag bad">ATENÇÃO</span>
+        <div>Informe pelo menos o saldo atual e a data do próximo recebimento.</div>
+      </div>
+
+      <button class="btn" onclick="calculate()">PILOTAR MEU MÊS →</button>
+    </section>
+
+    <section id="expense" class="screen">
+      <button class="back" onclick="show('home')">← Voltar</button>
+      <h1>Registrei um gasto.</h1>
+      <p class="sub">Digite quanto você gastou e o Piloto recalcula seu mês.</p>
+      <div class="field"><label>Valor do gasto</label><input id="expenseValue" inputmode="decimal" placeholder="Ex.: 37,90"></div>
+      <div class="field"><label>O que foi?</label><input id="expenseName" placeholder="Ex.: mercado"></div>
+      <button class="btn" onclick="addExpense()">REGISTRAR GASTO</button>
+      <div id="expenseResult"></div>
+    </section>
+
+    <section id="incomeAdd" class="screen">
+      <button class="back" onclick="show('home')">← Voltar</button>
+      <h1>Entrou dinheiro.</h1>
+      <p class="sub">Registre uma entrada para atualizar seu limite.</p>
+      <div class="field"><label>Quanto entrou?</label><input id="incomeValue" inputmode="decimal" placeholder="Ex.: 500"></div>
+      <div class="field"><label>De onde veio?</label><input id="incomeName" placeholder="Ex.: pagamento extra"></div>
+      <button class="btn" onclick="addIncome()">REGISTRAR ENTRADA</button>
+      <div id="incomeResult"></div>
+    </section>
+
+    <section id="buy" class="screen">
+      <button class="back" onclick="show('home')">← Voltar</button>
+      <h1>Posso comprar?</h1>
+      <p class="sub">Antes de gastar, veja o impacto no seu mês.</p>
+      <div class="field"><label>Quanto você quer gastar?</label><input id="purchase" inputmode="decimal" placeholder="Ex.: 150"></div>
+      <button class="btn" onclick="simulate()">SIMULAR COMPRA</button>
+      <div id="buyResult"></div>
+    </section>
+
+    <section id="future" class="screen">
+      <button class="back" onclick="show('home')">← Voltar</button>
+      <h1>Seu futuro.</h1>
+      <p class="sub">Uma projeção simples baseada no ritmo que você está mantendo.</p>
+      <div id="futureResult"></div>
+    </section>
+
+    <div class="nav">
+      <button id="navHome" class="active" onclick="show('home')">⌂<br>Hoje</button>
+      <button onclick="show('setup')">＋<br>Meu mês</button>
+      <button onclick="show('buy')">◉<br>Simular</button>
+    </div>
+  </div>
 </div>
 
-<div class="section-title">Ações rápidas</div>
-<div class="action-grid">
-<button class="action" onclick="show('expense')"><span>💸</span>Gastei<small>Registrar gasto</small></button>
-<button class="action" onclick="show('incomeAdd')"><span>💰</span>Recebi<small>Registrar entrada</small></button>
-<button class="action" onclick="show('buy')"><span>🛒</span>Posso comprar?<small>Simular antes</small></button>
-<button class="action" onclick="show('future')"><span>🔮</span>Meu futuro<small>Ver projeção</small></button>
-</div>
-<div style="margin-top:14px"><button class="btn secondary" onclick="show('setup')">⚙️ Ajustar meu mês</button></div>
-</section>
-
-<section id="setup" class="screen">
-<button class="back" onclick="show('home')">← Voltar</button>
-<h1>Vamos pilotar seu mês.</h1><p class="sub">Você controla os dados. O Piloto faz as contas.</p>
-<div class="field"><label>Quanto você tem disponível agora?</label><input id="balance" inputmode="decimal" placeholder="Ex.: 2500"></div>
-<div class="row"><div class="field"><label>Próximo recebimento</label><input id="payday" type="date"></div><div class="field"><label>Valor que vai receber</label><input id="income" inputmode="decimal" placeholder="Ex.: 3000"></div></div>
-<div class="field"><label>Quanto você quer proteger?</label><input id="reserveIn" inputmode="decimal" placeholder="Ex.: 300"></div>
-<div class="field"><label>Contas que ainda serão pagas antes de receber</label><input id="billsIn" inputmode="decimal" placeholder="Ex.: 1200"></div>
-<div id="setupError" class="result" style="display:none"><span class="tag bad">ATENÇÃO</span><div>Informe pelo menos o saldo atual e a data do próximo recebimento.</div></div>
-<button class="btn" onclick="calculate()">PILOTAR MEU MÊS →</button>
-</section>
-
-<section id="expense" class="screen">
-<button class="back" onclick="show('home')">← Voltar</button>
-<h1>Registrei um gasto.</h1><p class="sub">Digite quanto você gastou e o Piloto recalcula seu mês.</p>
-<div class="field"><label>Valor do gasto</label><input id="expenseValue" inputmode="decimal" placeholder="Ex.: 37,90"></div>
-<div class="field"><label>O que foi?</label><input id="expenseName" placeholder="Ex.: mercado"></div>
-<button class="btn" onclick="addExpense()">REGISTRAR GASTO</button>
-<div id="expenseResult"></div>
-</section>
-
-<section id="incomeAdd" class="screen">
-<button class="back" onclick="show('home')">← Voltar</button>
-<h1>Entrou dinheiro.</h1><p class="sub">Registre uma entrada para atualizar seu limite.</p>
-<div class="field"><label>Quanto entrou?</label><input id="incomeValue" inputmode="decimal" placeholder="Ex.: 500"></div>
-<div class="field"><label>De onde veio?</label><input id="incomeName" placeholder="Ex.: pagamento extra"></div>
-<button class="btn" onclick="addIncome()">REGISTRAR ENTRADA</button>
-<div id="incomeResult"></div>
-</section>
-
-<section id="buy" class="screen">
-<button class="back" onclick="show('home')">← Voltar</button>
-<h1>Posso comprar?</h1><p class="sub">Antes de gastar, veja o impacto no seu mês.</p>
-<div class="field"><label>Quanto você quer gastar?</label><input id="purchase" inputmode="decimal" placeholder="Ex.: 150"></div>
-<button class="btn" onclick="simulate()">SIMULAR COMPRA</button>
-<div id="buyResult"></div>
-</section>
-
-<section id="future" class="screen">
-<button class="back" onclick="show('home')">← Voltar</button>
-<h1>Seu futuro.</h1><p class="sub">Uma projeção simples baseada no ritmo que você está mantendo.</p>
-<div id="futureResult"></div>
-</section>
-
-<div class="nav">
-<button id="navHome" class="active" onclick="show('home')">⌂<br>Hoje</button>
-<button onclick="show('setup')">＋<br>Meu mês</button>
-<button onclick="show('buy')">◉<br>Simular</button>
-</div>
 </div>
 <div id="toast" class="toast"></div>
 
 <script>
-const money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0);
+const SUPABASE_URL = 'https://cdvmkuhjinleytjfpfjh.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_GsXm72rmmelAWcuz6_xhsw_RaND3urO';
+
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+let authMode = 'login';
+let user = null;
+let state = null;
+
+const money = n => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n)||0);
 
 function num(v){
   let s=String(v||'').trim().replace(/\s/g,'');
@@ -114,24 +239,156 @@ function num(v){
   return Number(s)||0;
 }
 
-function load(){
-  try{return JSON.parse(localStorage.getItem('pilotoMes')||'null')}
-  catch(e){return null}
+function setAuthMode(mode){
+  authMode=mode;
+  document.getElementById('tabLogin').classList.toggle('active',mode==='login');
+  document.getElementById('tabSignup').classList.toggle('active',mode==='signup');
+  document.getElementById('authTitle').textContent=mode==='login'?'Seu mês sob controle.':'Crie seu piloto.';
+  document.getElementById('authSub').textContent=mode==='login'
+    ?'Entre para salvar seu planejamento e acessar seus dados de qualquer lugar.'
+    :'Crie sua conta gratuitamente e comece a pilotar seu dinheiro.';
+  document.getElementById('authButton').textContent=mode==='login'?'ENTRAR':'CRIAR CONTA';
+  document.getElementById('authPassword').setAttribute('autocomplete',mode==='login'?'current-password':'new-password');
+  document.getElementById('authMessage').textContent='';
 }
 
-let state=load();
+async function handleAuth(){
+  const email=document.getElementById('authEmail').value.trim();
+  const password=document.getElementById('authPassword').value;
+  const button=document.getElementById('authButton');
+  const msg=document.getElementById('authMessage');
 
-function save(){
-  localStorage.setItem('pilotoMes',JSON.stringify(state));
+  if(!email||!password){
+    msg.textContent='Informe seu e-mail e sua senha.';
+    return;
+  }
+
+  if(password.length<6){
+    msg.textContent='A senha precisa ter pelo menos 6 caracteres.';
+    return;
+  }
+
+  button.disabled=true;
+  button.textContent='AGUARDE...';
+  msg.textContent='';
+
+  try{
+    if(authMode==='signup'){
+      const {data,error}=await db.auth.signUp({email,password});
+      if(error)throw error;
+
+      if(data.session){
+        user=data.user;
+        await startApp();
+      }else{
+        msg.textContent='Conta criada. Verifique seu e-mail para confirmar a conta e depois entre.';
+        button.disabled=false;
+        button.textContent='CRIAR CONTA';
+      }
+    }else{
+      const {data,error}=await db.auth.signInWithPassword({email,password});
+      if(error)throw error;
+      user=data.user;
+      await startApp();
+    }
+  }catch(error){
+    msg.textContent=humanError(error);
+    button.disabled=false;
+    button.textContent=authMode==='login'?'ENTRAR':'CRIAR CONTA';
+  }
 }
 
-function show(id){
-  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  document.getElementById('navHome').classList.toggle('active',id==='home');
-  if(id==='future')renderFuture();
-  if(id==='buy')document.getElementById('buyResult').innerHTML='';
-  window.scrollTo({top:0,behavior:'smooth'});
+function humanError(error){
+  const text=(error&&error.message)||'Não foi possível concluir.';
+  if(text.toLowerCase().includes('invalid login credentials'))return'E-mail ou senha incorretos.';
+  if(text.toLowerCase().includes('email not confirmed'))return'Confirme seu e-mail antes de entrar.';
+  if(text.toLowerCase().includes('user already registered'))return'Este e-mail já possui uma conta. Toque em Entrar.';
+  if(text.toLowerCase().includes('password'))return'A senha informada não atende aos requisitos.';
+  return text;
+}
+
+async function startApp(){
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  document.getElementById('mainApp').style.display='none';
+  document.getElementById('loadingBox').style.display='block';
+  document.getElementById('userEmail').textContent=user.email||'Conta';
+
+  try{
+    await loadUserData();
+    document.getElementById('loadingBox').style.display='none';
+    document.getElementById('mainApp').style.display='block';
+
+    if(state){
+      fillSetup();
+      recalc();
+      show('home');
+    }else{
+      show('setup');
+    }
+  }catch(error){
+    document.getElementById('loadingBox').textContent='Erro ao carregar seus dados: '+humanError(error);
+  }
+}
+
+async function loadUserData(){
+  const {data:profile,error:profileError}=await db
+    .from('financial_profiles')
+    .select('*')
+    .eq('user_id',user.id)
+    .maybeSingle();
+
+  if(profileError)throw profileError;
+
+  if(!profile){
+    state=null;
+    return;
+  }
+
+  const {data:transactions,error:txError}=await db
+    .from('transactions')
+    .select('*')
+    .eq('user_id',user.id)
+    .order('created_at',{ascending:true});
+
+  if(txError)throw txError;
+
+  state={
+    balance:Number(profile.balance)||0,
+    income:Number(profile.income)||0,
+    reserve:Number(profile.reserve)||0,
+    bills:Number(profile.bills)||0,
+    payday:profile.payday,
+    expenses:(transactions||[]).filter(x=>x.type==='expense').map(x=>({
+      id:x.id,value:Number(x.amount)||0,name:x.description||'Gasto',at:x.created_at
+    })),
+    extraIncome:(transactions||[]).filter(x=>x.type==='income').map(x=>({
+      id:x.id,value:Number(x.amount)||0,name:x.description||'Entrada',at:x.created_at
+    }))
+  };
+}
+
+function fillSetup(){
+  if(!state)return;
+  document.getElementById('balance').value=state.balance;
+  document.getElementById('income').value=state.income;
+  document.getElementById('reserveIn').value=state.reserve;
+  document.getElementById('billsIn').value=state.bills;
+  document.getElementById('payday').value=state.payday||'';
+}
+
+async function saveProfile(){
+  const {error}=await db.from('financial_profiles').upsert({
+    user_id:user.id,
+    balance:state.balance,
+    income:state.income,
+    payday:state.payday,
+    reserve:state.reserve,
+    bills:state.bills,
+    updated_at:new Date().toISOString()
+  },{onConflict:'user_id'});
+
+  if(error)throw error;
 }
 
 function daysUntil(date){
@@ -145,8 +402,7 @@ function daysUntil(date){
 function recalc(){
   if(!state)return;
 
-  const d=daysUntil(state.payday);
-  state.days=d;
+  state.days=daysUntil(state.payday);
 
   const totalExpenses=(state.expenses||[]).reduce((a,x)=>a+x.value,0);
   const totalIncome=(state.extraIncome||[]).reduce((a,x)=>a+x.value,0);
@@ -156,9 +412,8 @@ function recalc(){
 
   state.current=current;
   state.free=free;
-  state.recommended=(free/d)*.9;
+  state.recommended=(free/state.days)*.9;
 
-  save();
   render();
 }
 
@@ -172,78 +427,114 @@ function render(){
   document.getElementById('days').textContent=state.days+' '+(state.days===1?'dia':'dias');
 
   const status=document.getElementById('status');
-  status.textContent=state.recommended>0?'Seu mês está no radar':'Atenção: sua margem está comprometida';
+  const dot=document.getElementById('statusDot');
+
+  if(state.recommended<=0){
+    status.textContent='Atenção: sua margem está comprometida';
+    dot.style.background='var(--bad)';
+  }else if(state.recommended<30){
+    status.textContent='Atenção: vá com calma hoje';
+    dot.style.background='var(--warn)';
+  }else{
+    status.textContent='Seu mês está no radar';
+    dot.style.background='var(--good)';
+  }
 }
 
-function calculate(){
+async function calculate(){
   const balance=num(document.getElementById('balance').value);
   const income=num(document.getElementById('income').value);
   const reserve=num(document.getElementById('reserveIn').value);
   const bills=num(document.getElementById('billsIn').value);
   const payday=document.getElementById('payday').value;
+  const errorBox=document.getElementById('setupError');
 
   if(balance<=0||!payday){
-    document.getElementById('setupError').style.display='block';
+    errorBox.style.display='block';
     return;
   }
 
-  document.getElementById('setupError').style.display='none';
+  errorBox.style.display='none';
 
-  state={
-    balance,
-    income,
-    reserve,
-    bills,
-    payday,
-    expenses:[],
-    extraIncome:[]
-  };
+  const oldExpenses=state?.expenses||[];
+  const oldExtraIncome=state?.extraIncome||[];
 
-  recalc();
-  show('home');
-  toast('Seu mês foi pilotado com sucesso. 🚀');
+  state={balance,income,reserve,bills,payday,expenses:oldExpenses,extraIncome:oldExtraIncome};
+
+  try{
+    await saveProfile();
+    recalc();
+    show('home');
+    toast('Seu mês foi salvo com sucesso. 🚀');
+  }catch(error){
+    toast('Não foi possível salvar: '+humanError(error));
+  }
 }
 
-function addExpense(){
+async function addExpense(){
   if(!state){show('setup');return}
 
   const value=num(document.getElementById('expenseValue').value);
   const name=document.getElementById('expenseName').value.trim()||'Gasto';
 
-  if(value<=0)return;
+  if(value<=0){
+    toast('Informe um valor válido.');
+    return;
+  }
 
-  state.expenses=state.expenses||[];
-  state.expenses.push({value,name,at:new Date().toISOString()});
-  recalc();
+  try{
+    const {data,error}=await db.from('transactions').insert({
+      user_id:user.id,type:'expense',amount:value,description:name
+    }).select().single();
 
-  document.getElementById('expenseResult').innerHTML=
-    '<div class="result"><span class="tag">ATUALIZADO</span><div class="big">'+money(state.recommended)+'/dia</div><p>Seu novo limite recomendado foi recalculado.</p></div>';
+    if(error)throw error;
 
-  document.getElementById('expenseValue').value='';
-  document.getElementById('expenseName').value='';
+    state.expenses=state.expenses||[];
+    state.expenses.push({id:data.id,value,name,at:data.created_at});
+    recalc();
 
-  toast('Gasto registrado e mês atualizado.');
+    document.getElementById('expenseResult').innerHTML=
+      '<div class="result"><span class="tag">ATUALIZADO</span><div class="big">'+money(state.recommended)+'/dia</div><p>Seu novo limite recomendado foi recalculado.</p></div>';
+
+    document.getElementById('expenseValue').value='';
+    document.getElementById('expenseName').value='';
+    toast('Gasto registrado e mês atualizado.');
+  }catch(error){
+    toast('Não foi possível registrar: '+humanError(error));
+  }
 }
 
-function addIncome(){
+async function addIncome(){
   if(!state){show('setup');return}
 
   const value=num(document.getElementById('incomeValue').value);
   const name=document.getElementById('incomeName').value.trim()||'Entrada';
 
-  if(value<=0)return;
+  if(value<=0){
+    toast('Informe um valor válido.');
+    return;
+  }
 
-  state.extraIncome=state.extraIncome||[];
-  state.extraIncome.push({value,name,at:new Date().toISOString()});
-  recalc();
+  try{
+    const {data,error}=await db.from('transactions').insert({
+      user_id:user.id,type:'income',amount:value,description:name
+    }).select().single();
 
-  document.getElementById('incomeResult').innerHTML=
-    '<div class="result"><span class="tag">ATUALIZADO</span><div class="big">'+money(state.recommended)+'/dia</div><p>Seu limite aumentou de acordo com a nova entrada.</p></div>';
+    if(error)throw error;
 
-  document.getElementById('incomeValue').value='';
-  document.getElementById('incomeName').value='';
+    state.extraIncome=state.extraIncome||[];
+    state.extraIncome.push({id:data.id,value,name,at:data.created_at});
+    recalc();
 
-  toast('Entrada registrada e mês atualizado.');
+    document.getElementById('incomeResult').innerHTML=
+      '<div class="result"><span class="tag">ATUALIZADO</span><div class="big">'+money(state.recommended)+'/dia</div><p>Seu limite aumentou de acordo com a nova entrada.</p></div>';
+
+    document.getElementById('incomeValue').value='';
+    document.getElementById('incomeName').value='';
+    toast('Entrada registrada e mês atualizado.');
+  }catch(error){
+    toast('Não foi possível registrar: '+humanError(error));
+  }
 }
 
 function simulate(){
@@ -255,7 +546,10 @@ function simulate(){
     return;
   }
 
-  if(p<=0)return;
+  if(p<=0){
+    toast('Informe o valor da compra.');
+    return;
+  }
 
   const newFree=state.free-p;
   const newDaily=Math.max(0,(newFree/state.days)*.9);
@@ -271,8 +565,7 @@ function simulate(){
     tag='tag warn';
   }
 
-  let html=
-    '<div class="result">'+
+  let html='<div class="result">'+
     '<span class="'+tag+'">'+title+'</span>'+
     '<div class="big">'+money(newDaily)+'/dia</div>'+
     '<p>Antes: <b>'+money(state.recommended)+'/dia</b><br>'+
@@ -289,24 +582,28 @@ function simulate(){
   result.innerHTML=html;
 }
 
-function confirmPurchase(value){
+async function confirmPurchase(value){
   if(!state||value<=0||value>state.free)return;
 
-  state.expenses=state.expenses||[];
-  state.expenses.push({
-    value:Number(value),
-    name:'Compra confirmada',
-    at:new Date().toISOString()
-  });
+  try{
+    const {data,error}=await db.from('transactions').insert({
+      user_id:user.id,type:'expense',amount:value,description:'Compra confirmada'
+    }).select().single();
 
-  recalc();
+    if(error)throw error;
 
-  document.getElementById('purchase').value='';
-  toast('Compra registrada. Seu mês mudou. ✅');
+    state.expenses=state.expenses||[];
+    state.expenses.push({id:data.id,value,name:'Compra confirmada',at:data.created_at});
+    recalc();
 
-  setTimeout(function(){
-    show('home');
-  },500);
+    document.getElementById('purchase').value='';
+    document.getElementById('buyResult').innerHTML=
+      '<div class="result"><span class="tag">COMPRA CONFIRMADA</span><div class="big">'+money(state.recommended)+'/dia</div><p>Agora o gasto faz parte do seu mês. O limite principal foi atualizado.</p></div>';
+
+    toast('Compra registrada. Seu mês mudou. ✅');
+  }catch(error){
+    toast('Não foi possível confirmar: '+humanError(error));
+  }
 }
 
 function renderFuture(){
@@ -319,7 +616,8 @@ function renderFuture(){
 
   const expenses=(state.expenses||[]).reduce((a,x)=>a+x.value,0);
   const projected=Math.max(0,state.current-state.bills-state.reserve);
-  const dailyReal=state.days?expenses/Math.max(1,30-state.days):0;
+  const elapsed=Math.max(1,30-state.days);
+  const dailyReal=expenses/elapsed;
 
   let tag='tag',label='🟢 DENTRO DO PLANO';
 
@@ -331,8 +629,7 @@ function renderFuture(){
     label='🟡 SEU RITMO ESTÁ ALTO';
   }
 
-  r.innerHTML=
-    '<div class="result">'+
+  r.innerHTML='<div class="result">'+
     '<span class="'+tag+'">'+label+'</span>'+
     '<h3>Resumo do seu cenário</h3>'+
     '<p>Dinheiro livre agora</p>'+
@@ -344,18 +641,56 @@ function renderFuture(){
     '</div>';
 }
 
+function show(id){
+  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+  const target=document.getElementById(id);
+  if(target)target.classList.add('active');
+
+  document.getElementById('navHome').classList.toggle('active',id==='home');
+
+  if(id==='future')renderFuture();
+  if(id==='buy')document.getElementById('buyResult').innerHTML='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function logout(){
+  await db.auth.signOut();
+  user=null;
+  state=null;
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('authScreen').style.display='flex';
+  document.getElementById('authEmail').value='';
+  document.getElementById('authPassword').value='';
+  setAuthMode('login');
+  toast('Você saiu da conta.');
+}
+
 function toast(t){
   const x=document.getElementById('toast');
   x.textContent=t;
   x.style.display='block';
-  setTimeout(()=>x.style.display='none',2200);
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer=setTimeout(()=>x.style.display='none',2500);
 }
 
-if(state){
-  recalc();
-}else{
-  document.getElementById('payday').value='';
-}
+db.auth.onAuthStateChange(async (event,session)=>{
+  if(session&&session.user&&!user){
+    user=session.user;
+    await startApp();
+  }
+});
+
+(async function init(){
+  try{
+    const {data}=await db.auth.getSession();
+    if(data.session&&data.session.user){
+      user=data.session.user;
+      await startApp();
+    }
+  }catch(error){
+    document.getElementById('authMessage').textContent='Não foi possível conectar ao sistema. Verifique a configuração do Supabase.';
+  }
+})();
 </script>
 </body>
-  </html>
+</html>
