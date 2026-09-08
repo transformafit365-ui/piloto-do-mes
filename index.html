@@ -1,181 +1,102 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0b0d12">
-  <meta name="description" content="Piloto do Mês: descubra quanto pode gastar hoje sem comprometer o seu mês.">
-  <title>Piloto do Mês</title>
-  <style>
-    :root{
-      --bg:#0b0d12;--card:#141821;--card2:#10131a;--text:#f5f7fb;--muted:#9da6b7;
-      --line:#252b38;--accent:#7c5cff;--good:#42d392;--warn:#f5b942;--bad:#ff647c;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-    button,input{font:inherit}
-    .app{max-width:520px;margin:auto;padding:18px 16px 34px}
-    .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
-    .brand{font-weight:800;letter-spacing:-.5px}.brand span{color:var(--accent)}
-    .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:7px 10px;border-radius:99px}
-    h1{font-size:34px;line-height:1.03;margin:0 0 10px;letter-spacing:-1.5px}
-    .sub{color:var(--muted);line-height:1.5;margin:0 0 22px}
-    .hero{background:linear-gradient(145deg,#171b29,#10131a);border:1px solid var(--line);border-radius:26px;padding:24px;margin-bottom:14px}
-    .label{color:var(--muted);font-size:13px}.amount{font-size:48px;font-weight:850;letter-spacing:-2px;margin:5px 0}
-    .status{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;margin-top:5px}
-    .dot{width:9px;height:9px;border-radius:50%;background:var(--good)}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:17px}
-    .value{font-size:21px;font-weight:800;margin-top:5px}
-    .section{font-size:15px;font-weight:800;margin:24px 2px 10px}
-    .btn{width:100%;border:0;border-radius:17px;padding:15px 16px;font-weight:800;color:#fff;background:var(--accent);cursor:pointer}
-    .btn.secondary{background:var(--card);border:1px solid var(--line)}
-    .btn + .btn{margin-top:9px}
-    .row{display:flex;gap:9px}.row>*{flex:1}
-    .screen{display:none}.screen.active{display:block}
-    input{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:14px;outline:none}
-    input:focus{border-color:var(--accent)}
-    .field{margin-bottom:13px}.field label{display:block;font-size:13px;color:var(--muted);margin:0 0 7px}
-    .back{background:none;border:0;color:var(--muted);padding:5px 0;margin-bottom:18px;cursor:pointer}
-    .result{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;margin-top:14px}
-    .small{font-size:12px;color:var(--muted);line-height:1.45}
-    .error{color:var(--bad);font-size:13px;margin-top:8px;display:none}
-    .nav{position:sticky;bottom:10px;background:rgba(20,24,33,.94);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:7px;display:flex;gap:6px;margin-top:22px}
-    .nav button{flex:1;background:none;border:0;color:var(--muted);padding:10px 5px;border-radius:14px;font-size:12px;cursor:pointer}
-    .nav button.active{background:#202637;color:#fff;font-weight:800}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<title>Piloto do Mês</title>
+<style>
+:root{--bg:#0b0d12;--card:#141821;--card2:#10131a;--text:#f5f7fb;--muted:#9da6b7;--line:#252b38;--accent:#7c5cff;--good:#42d392;--warn:#f5b942;--bad:#ff647c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}button,input{font:inherit}.app{max-width:520px;margin:auto;padding:18px 16px 34px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}.brand{font-weight:800;letter-spacing:-.5px}.brand span{color:var(--accent)}.pill{font-size:12px;color:var(--muted);border:1px solid var(--line);padding:7px 10px;border-radius:99px}h1{font-size:34px;line-height:1.03;margin:0 0 10px;letter-spacing:-1.5px}.sub{color:var(--muted);line-height:1.5;margin:0 0 22px}.hero{background:linear-gradient(145deg,#171b29,#10131a);border:1px solid var(--line);border-radius:26px;padding:24px;margin-bottom:14px}.label{color:var(--muted);font-size:13px}.amount{font-size:48px;font-weight:850;letter-spacing:-2px;margin:5px 0}.status{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;margin-top:5px}.dot{width:9px;height:9px;border-radius:50%;background:var(--good)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:17px}.value{font-size:21px;font-weight:800;margin-top:5px}.btn{width:100%;border:0;border-radius:17px;padding:15px 16px;font-weight:800;color:#fff;background:var(--accent);cursor:pointer}.btn.secondary{background:var(--card);border:1px solid var(--line)}.btn+.btn{margin-top:9px}.screen{display:none}.screen.active{display:block}input{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:14px;outline:none}input:focus{border-color:var(--accent)}.field{margin-bottom:13px}.field label{display:block;font-size:13px;color:var(--muted);margin:0 0 7px}.back{background:none;border:0;color:var(--muted);padding:5px 0;margin-bottom:18px;cursor:pointer}.result{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;margin-top:14px}.small{font-size:12px;color:var(--muted);line-height:1.45}.error{color:var(--bad);font-size:13px;margin-top:8px;display:none}.nav{position:sticky;bottom:10px;background:rgba(20,24,33,.94);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:7px;display:flex;gap:6px;margin-top:22px}.nav button{flex:1;background:none;border:0;color:var(--muted);padding:10px 5px;border-radius:14px;font-size:12px;cursor:pointer}.nav button.active{background:#202637;color:#fff;font-weight:800}
+</style>
 </head>
 <body>
 <div class="app">
+<div class="top"><div class="brand">PILOTO<span>.</span></div><div class="pill">Seu mês sob controle</div></div>
 
-  <div class="top">
-    <div class="brand">PILOTO<span>.</span></div>
-    <div class="pill">Seu mês sob controle</div>
-  </div>
+<section id="home" class="screen active">
+<h1>Quanto você pode gastar hoje?</h1>
+<p class="sub">Informe seu mês e o Piloto calcula um limite diário considerando seu dinheiro, seus compromissos e sua reserva.</p>
+<div class="hero"><div class="label">LIMITE RECOMENDADO HOJE</div><div class="amount" id="daily">R$ 0,00</div><div class="status"><span class="dot"></span><span id="status">Configure seu mês para começar</span></div></div>
+<div class="grid">
+<div class="card"><div class="label">Disponível</div><div class="value" id="available">R$ 0,00</div></div>
+<div class="card"><div class="label">Protegido</div><div class="value" id="reserve">R$ 0,00</div></div>
+<div class="card"><div class="label">Comprometido</div><div class="value" id="bills">R$ 0,00</div></div>
+<div class="card"><div class="label">Dias restantes</div><div class="value" id="days">0</div></div>
+</div>
+<button class="btn" onclick="show('setup')">CONFIGURAR MEU MÊS</button>
+<button class="btn secondary" onclick="show('buy')">🛒 POSSO COMPRAR?</button>
+</section>
 
-  <section id="home" class="screen active">
-    <h1>Quanto você pode gastar hoje?</h1>
-    <p class="sub">Informe seu mês e o Piloto calcula um limite diário considerando seu dinheiro, seus compromissos e sua reserva.</p>
+<section id="setup" class="screen">
+<button class="back" onclick="show('home')">← Voltar</button>
+<h1>Vamos pilotar seu mês.</h1>
+<p class="sub">Leva menos de dois minutos. Você não precisa conectar nenhum banco.</p>
+<div class="field"><label>Quanto você tem disponível agora?</label><input id="balance" inputmode="decimal" placeholder="Ex.: 2500"></div>
+<div class="field"><label>Quando você recebe novamente?</label><input id="payday" type="date"></div>
+<div class="field"><label>Quanto vai receber?</label><input id="income" inputmode="decimal" placeholder="Ex.: 3000"></div>
+<div class="field"><label>Quanto você quer proteger?</label><input id="reserveIn" inputmode="decimal" placeholder="Ex.: 300"></div>
+<div class="field"><label>Contas que ainda serão pagas até receber</label><input id="billsIn" inputmode="decimal" placeholder="Ex.: 1200"></div>
+<div id="setupError" class="error">Preencha o saldo e a data do próximo recebimento.</div>
+<button class="btn" onclick="calculate()">PILOTAR MEU MÊS →</button>
+</section>
 
-    <div class="hero">
-      <div class="label">LIMITE RECOMENDADO HOJE</div>
-      <div class="amount" id="daily">R$ 0,00</div>
-      <div class="status"><span class="dot"></span><span id="status">Configure seu mês para começar</span></div>
-    </div>
+<section id="buy" class="screen">
+<button class="back" onclick="show('home')">← Voltar</button>
+<h1>Posso comprar?</h1>
+<p class="sub">Digite o valor. Vamos simular o impacto antes de você gastar.</p>
+<div class="field"><label>Quanto você quer gastar?</label><input id="purchase" inputmode="decimal" placeholder="Ex.: 150"></div>
+<button class="btn" onclick="simulate()">SIMULAR COMPRA</button>
+<div id="buyResult"></div>
+</section>
 
-    <div class="grid">
-      <div class="card"><div class="label">Disponível</div><div class="value" id="available">R$ 0,00</div></div>
-      <div class="card"><div class="label">Protegido</div><div class="value" id="reserve">R$ 0,00</div></div>
-      <div class="card"><div class="label">Comprometido</div><div class="value" id="bills">R$ 0,00</div></div>
-      <div class="card"><div class="label">Dias restantes</div><div class="value" id="days">0</div></div>
-    </div>
-
-    <button class="btn" onclick="show('setup')">CONFIGURAR MEU MÊS</button>
-    <button class="btn secondary" onclick="show('buy')">🛒 POSSO COMPRAR?</button>
-  </section>
-
-  <section id="setup" class="screen">
-    <button class="back" onclick="show('home')">← Voltar</button>
-    <h1>Vamos pilotar seu mês.</h1>
-    <p class="sub">Leva menos de dois minutos. Você não precisa conectar nenhum banco.</p>
-
-    <div class="field"><label>Quanto você tem disponível agora?</label><input id="balance" inputmode="decimal" placeholder="Ex.: 2500"></div>
-    <div class="field"><label>Quando você recebe novamente?</label><input id="payday" type="date"></div>
-    <div class="field"><label>Quanto vai receber?</label><input id="income" inputmode="decimal" placeholder="Ex.: 3000"></div>
-    <div class="field"><label>Quanto você quer proteger?</label><input id="reserveIn" inputmode="decimal" placeholder="Ex.: 300"></div>
-    <div class="field"><label>Contas que ainda serão pagas até receber</label><input id="billsIn" inputmode="decimal" placeholder="Ex.: 1200"></div>
-    <div id="setupError" class="error">Preencha os valores necessários.</div>
-    <button class="btn" onclick="calculate()">PILOTAR MEU MÊS →</button>
-  </section>
-
-  <section id="buy" class="screen">
-    <button class="back" onclick="show('home')">← Voltar</button>
-    <h1>Posso comprar?</h1>
-    <p class="sub">Digite o valor. Vamos simular o impacto antes de você gastar.</p>
-    <div class="field"><label>Quanto você quer gastar?</label><input id="purchase" inputmode="decimal" placeholder="Ex.: 150"></div>
-    <button class="btn" onclick="simulate()">SIMULAR COMPRA</button>
-    <div id="buyResult"></div>
-  </section>
-
-  <div class="nav">
-    <button id="navHome" class="active" onclick="show('home')">⌂<br>Hoje</button>
-    <button onclick="show('setup')">＋<br>Meu mês</button>
-    <button onclick="show('buy')">◉<br>Simular</button>
-  </div>
+<div class="nav">
+<button id="navHome" class="active" onclick="show('home')">⌂<br>Hoje</button>
+<button onclick="show('setup')">＋<br>Meu mês</button>
+<button onclick="show('buy')">◉<br>Simular</button>
+</div>
 </div>
 
 <script>
-  const money = n => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0);
-  const num = v => Number(String(v||'').replace(/\./g,'').replace(',','.')) || 0;
-  const state = JSON.parse(localStorage.getItem('pilotoMes') || 'null');
+const money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0);
+function num(v){let s=String(v||'').trim().replace(/\s/g,'');if(!s)return 0;if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');else if(s.includes(','))s=s.replace(',','.');return Number(s)||0;}
+let state=null;try{state=JSON.parse(localStorage.getItem('pilotoMes')||'null')}catch(e){state=null}
 
-  function show(id){
-    document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    document.getElementById('navHome').classList.toggle('active',id==='home');
-    window.scrollTo({top:0,behavior:'smooth'});
-  }
+function show(id){
+document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+document.getElementById('navHome').classList.toggle('active',id==='home');
+if(id==='buy')document.getElementById('buyResult').innerHTML='';
+window.scrollTo({top:0,behavior:'smooth'});
+}
+function daysUntil(date){const now=new Date();now.setHours(0,0,0,0);const d=new Date(date+'T00:00:00');d.setHours(0,0,0,0);return Math.max(1,Math.ceil((d-now)/86400000));}
 
-  function daysUntil(date){
-    const now = new Date(); now.setHours(0,0,0,0);
-    const d = new Date(date+'T00:00:00'); d.setHours(0,0,0,0);
-    return Math.max(1,Math.ceil((d-now)/86400000));
-  }
-
-  function calculate(){
-    const balance=num(balanceEl.value), income=num(incomeEl.value), reserve=num(reserveIn.value), bills=num(billsIn.value);
-    const payday=paydayEl.value;
-    if(balance<=0 || !payday){setupError.style.display='block';return}
-    const d=daysUntil(payday);
-    const free=Math.max(0,balance-bills-reserve);
-    const technical=free/d;
-    const recommended=technical*.9;
-    const data={balance,income,reserve,bills,payday,days:d,free,recommended};
-    localStorage.setItem('pilotoMes',JSON.stringify(data));
-    render(data); show('home');
-  }
-
-  function render(s){
-    daily.textContent=money(s.recommended);
-    available.textContent=money(s.free);
-    reserve.textContent=money(s.reserve);
-    bills.textContent=money(s.bills);
-    days.textContent=s.days;
-    status.textContent=s.recommended>0?'Seu mês está no radar':'Atenção: há compromissos que consomem sua margem';
-  }
-
-  function simulate(){
-    const p=num(purchase.value);
-    if(!state || p<=0){
-      buyResult.innerHTML='<div class="result"><b>Configure seu mês primeiro.</b><p class="small">Assim consigo calcular o impacto real da compra.</p></div>';return;
-    }
-    const newFree=Math.max(0,state.free-p);
-    const newDaily=Math.max(0,(newFree/state.days)*.9);
-    let title='🟢 CABE NO SEU PLANO';
-    if(p>state.free) title='🔴 NÃO É SEGURO';
-    else if(newDaily<state.recommended*.75) title='🟡 CABE, MAS VAI APERTAR';
-    buyResult.innerHTML=`<div class="result"><div style="font-size:18px;font-weight:800">${title}</div>
-      <p class="small">Antes da compra, seu limite recomendado é <b>${money(state.recommended)}/dia</b>.</p>
-      <p class="small">Depois de gastar ${money(p)}, ele ficaria em aproximadamente <b>${money(newDaily)}/dia</b>.</p>
-      <p class="small">Dinheiro livre depois da compra: <b>${money(newFree)}</b>.</p></div>`;
-  }
-
-  const balanceEl=document.getElementById('balance');
-  const paydayEl=document.getElementById('payday');
-  const incomeEl=document.getElementById('income');
-  const reserveIn=document.getElementById('reserveIn');
-  const billsIn=document.getElementById('billsIn');
-  const setupError=document.getElementById('setupError');
-  const daily=document.getElementById('daily');
-  const available=document.getElementById('available');
-  const reserve=document.getElementById('reserve');
-  const bills=document.getElementById('bills');
-  const days=document.getElementById('days');
-  const status=document.getElementById('status');
-  const purchase=document.getElementById('purchase');
-  const buyResult=document.getElementById('buyResult');
-
-  if(state) render(state);
+function calculate(){
+const balance=num(document.getElementById('balance').value),income=num(document.getElementById('income').value),reserve=num(document.getElementById('reserveIn').value),bills=num(document.getElementById('billsIn').value),payday=document.getElementById('payday').value;
+const err=document.getElementById('setupError');
+if(balance<=0||!payday){err.style.display='block';return}err.style.display='none';
+const d=daysUntil(payday),free=Math.max(0,balance-bills-reserve),technical=free/d,recommended=technical*.9;
+state={balance,income,reserve,bills,payday,days:d,free,recommended};
+localStorage.setItem('pilotoMes',JSON.stringify(state));
+render(state);
+show('home');
+}
+function render(s){
+document.getElementById('daily').textContent=money(s.recommended);
+document.getElementById('available').textContent=money(s.free);
+document.getElementById('reserve').textContent=money(s.reserve);
+document.getElementById('bills').textContent=money(s.bills);
+document.getElementById('days').textContent=s.days;
+document.getElementById('status').textContent=s.recommended>0?'Seu mês está no radar':'Atenção: há compromissos que consomem sua margem';
+}
+function simulate(){
+const p=num(document.getElementById('purchase').value),result=document.getElementById('buyResult');
+if(!state||p<=0){result.innerHTML='<div class="result"><b>Configure seu mês primeiro.</b><p class="small">Assim consigo calcular o impacto real da compra.</p></div>';return}
+const newFree=state.free-p,newDaily=Math.max(0,(Math.max(0,newFree)/state.days)*.9);
+let title='🟢 CABE NO SEU PLANO';if(p>state.free)title='🔴 NÃO É SEGURO';else if(newDaily<state.recommended*.75)title='🟡 CABE, MAS VAI APERTAR';
+result.innerHTML='<div class="result"><div style="font-size:18px;font-weight:800">'+title+'</div><p class="small">Antes da compra, seu limite recomendado é <b>'+money(state.recommended)+'/dia</b>.</p><p class="small">Depois de gastar '+money(p)+', ele ficaria em aproximadamente <b>'+money(newDaily)+'/dia</b>.</p><p class="small">Dinheiro livre depois da compra: <b>'+money(Math.max(0,newFree))+'</b>.</p></div>';
+}
+if(state)render(state);
 </script>
 </body>
   </html>
