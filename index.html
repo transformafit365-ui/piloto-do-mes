@@ -71,7 +71,7 @@ input:focus{border-color:var(--accent)}
 .account{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;margin-bottom:16px}
 .account small{color:var(--muted);display:block;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .logout{background:none;border:0;color:var(--bad);font-size:12px;font-weight:800}
-.loading{text-align:center;color:var(--muted);padding:40px 0}
+.loading{text-align:center;color:var(--muted);padding:40px 0}.empty{text-align:center;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:15px;padding:18px}
 .list{display:grid;gap:9px;margin-top:12px}.item{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:15px;padding:13px}.item strong{display:block}.item small{color:var(--muted)}.item button{background:none;border:0;color:var(--bad);font-size:12px;font-weight:800}.date{font-size:11px;color:var(--muted);margin-top:3px}
 </style>
 </head>
@@ -146,6 +146,8 @@ input:focus{border-color:var(--accent)}
         <button class="action" onclick="show('buy')"><span>🛒</span>Posso comprar?<small>Simular antes</small></button>
         <button class="action" onclick="show('future')"><span>🔮</span>Meu futuro<small>Ver projeção</small></button>
         <button class="action" onclick="show('commitments')"><span>📅</span>Contas futuras<small>Organizar compromissos</small></button>
+        <button class="action" onclick="show('history')"><span>📜</span>Histórico<small>Ver movimentações</small></button>
+        <button class="action" onclick="show('goals')"><span>🎯</span>Metas<small>Guardar para objetivos</small></button>
       </div>
 
       <div style="margin-top:14px">
@@ -225,6 +227,30 @@ input:focus{border-color:var(--accent)}
       <h1>Seu futuro.</h1>
       <p class="sub">Uma projeção simples baseada no ritmo que você está mantendo.</p>
       <div id="futureResult"></div>
+    </section>
+
+    <section id="history" class="screen">
+      <button class="back" onclick="show('home')">← Voltar</button>
+      <h1>Seu histórico.</h1>
+      <p class="sub">Veja tudo que entrou e saiu da sua conta.</p>
+      <div id="historySummary"></div>
+      <div id="historyList" class="list"></div>
+    </section>
+
+    <section id="goals" class="screen">
+      <button class="back" onclick="show('home')">← Voltar</button>
+      <h1>Suas metas.</h1>
+      <p class="sub">Dê um destino para o dinheiro que você quer guardar.</p>
+      <div class="field"><label>Nome da meta</label><input id="goalName" placeholder="Ex.: viagem"></div>
+      <div class="row">
+        <div class="field"><label>Valor da meta</label><input id="goalTarget" inputmode="decimal" placeholder="Ex.: 3000"></div>
+        <div class="field"><label>Já guardado</label><input id="goalSaved" inputmode="decimal" placeholder="Ex.: 500"></div>
+      </div>
+      <div class="field"><label>Data desejada</label><input id="goalDate" type="date"></div>
+      <button class="btn" onclick="addGoal()">CRIAR META</button>
+      <div id="goalResult"></div>
+      <div class="section-title">Minhas metas</div>
+      <div id="goalList" class="list"></div>
     </section>
 
     <div class="nav">
@@ -380,6 +406,14 @@ async function loadUserData(){
 
   if(commitmentError)throw commitmentError;
 
+  const {data:goals,error:goalError}=await db
+    .from('goals')
+    .select('*')
+    .eq('user_id',user.id)
+    .order('created_at',{ascending:false});
+
+  if(goalError)throw goalError;
+
   state={
     balance:Number(profile.balance)||0,
     income:Number(profile.income)||0,
@@ -394,6 +428,12 @@ async function loadUserData(){
     })),
     commitments:(commitments||[]).map(x=>({
       id:x.id,description:x.description,amount:Number(x.amount)||0,due_date:x.due_date
+    })),
+    goals:(goals||[]).map(x=>({
+      id:x.id,name:x.name||'Meta',
+      target_amount:Number(x.target_amount)||0,
+      saved_amount:Number(x.saved_amount)||0,
+      target_date:x.target_date||''
     }))
   };
 }
@@ -793,6 +833,166 @@ function renderFuture(){
     '</div>';
 }
 
+
+function allTransactions(){
+  const expenses=(state?.expenses||[]).map(x=>({
+    id:x.id,type:'expense',amount:Number(x.value)||0,
+    description:x.name||'Gasto',created_at:x.at
+  }));
+  const incomes=(state?.extraIncome||[]).map(x=>({
+    id:x.id,type:'income',amount:Number(x.value)||0,
+    description:x.name||'Entrada',created_at:x.at
+  }));
+  return [...expenses,...incomes].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+}
+
+function formatDateTime(value){
+  if(!value)return'';
+  return new Intl.DateTimeFormat('pt-BR',{
+    day:'2-digit',month:'2-digit',year:'numeric',
+    hour:'2-digit',minute:'2-digit'
+  }).format(new Date(value));
+}
+
+async function deleteTransaction(id){
+  if(!state||!id)return;
+  const tx=allTransactions().find(x=>x.id===id);
+  if(!tx)return;
+  if(!confirm(tx.type==='expense'
+    ?'Excluir este gasto? O limite do mês será recalculado.'
+    :'Excluir esta entrada? O limite do mês será recalculado.'))return;
+
+  try{
+    const {error}=await db.from('transactions').delete().eq('id',id).eq('user_id',user.id);
+    if(error)throw error;
+    state.expenses=(state.expenses||[]).filter(x=>x.id!==id);
+    state.extraIncome=(state.extraIncome||[]).filter(x=>x.id!==id);
+    recalc();
+    renderHistory();
+    toast('Movimentação excluída e mês recalculado.');
+  }catch(error){
+    toast('Não foi possível excluir: '+humanError(error));
+  }
+}
+
+function renderHistory(){
+  const summary=document.getElementById('historySummary');
+  const list=document.getElementById('historyList');
+  if(!summary||!list)return;
+
+  const items=allTransactions();
+  const totalIncome=items.filter(x=>x.type==='income').reduce((a,x)=>a+x.amount,0);
+  const totalExpense=items.filter(x=>x.type==='expense').reduce((a,x)=>a+x.amount,0);
+
+  summary.innerHTML='<div class="grid">'+
+    '<div class="card"><div class="label">Entradas</div><div class="value">'+money(totalIncome)+'</div></div>'+
+    '<div class="card"><div class="label">Gastos</div><div class="value">'+money(totalExpense)+'</div></div>'+
+  '</div>';
+
+  if(!items.length){
+    list.innerHTML='<div class="result"><span class="tag">COMECE AGORA</span><p>Ainda não existem movimentações registradas.</p></div>';
+    return;
+  }
+
+  list.innerHTML=items.map(x=>{
+    const income=x.type==='income';
+    return '<div class="item">'+
+      '<div><strong>'+escapeHtml(x.description)+'</strong><small>'+formatDateTime(x.created_at)+'</small></div>'+
+      '<div style="text-align:right"><strong>'+(income?'+':'-')+' '+money(x.amount)+'</strong><br>'+
+      '<button onclick="deleteTransaction(\''+x.id+'\')">EXCLUIR</button></div>'+
+    '</div>';
+  }).join('');
+}
+
+async function addGoal(){
+  if(!state){show('setup');return}
+
+  const name=document.getElementById('goalName').value.trim()||'Meta';
+  const target_amount=num(document.getElementById('goalTarget').value);
+  const saved_amount=num(document.getElementById('goalSaved').value);
+  const target_date=document.getElementById('goalDate').value||null;
+
+  if(target_amount<=0){toast('Informe um valor válido para a meta.');return;}
+  if(saved_amount<0||saved_amount>target_amount){
+    toast('O valor já guardado precisa estar entre R$ 0 e o valor da meta.');
+    return;
+  }
+  if(target_date&&new Date(target_date+'T00:00:00')<new Date()){
+    toast('Escolha uma data futura para a meta.');
+    return;
+  }
+
+  try{
+    const {data,error}=await db.from('goals').insert({
+      user_id:user.id,name,target_amount,saved_amount,target_date
+    }).select().single();
+    if(error)throw error;
+
+    state.goals=state.goals||[];
+    state.goals.unshift({
+      id:data.id,name:data.name,
+      target_amount:Number(data.target_amount)||0,
+      saved_amount:Number(data.saved_amount)||0,
+      target_date:data.target_date||''
+    });
+
+    document.getElementById('goalName').value='';
+    document.getElementById('goalTarget').value='';
+    document.getElementById('goalSaved').value='';
+    document.getElementById('goalDate').value='';
+    renderGoals();
+    toast('Meta criada. 🎯');
+  }catch(error){
+    toast('Não foi possível criar a meta: '+humanError(error));
+  }
+}
+
+async function deleteGoal(id){
+  if(!state||!id)return;
+  if(!confirm('Excluir esta meta?'))return;
+
+  try{
+    const {error}=await db.from('goals').delete().eq('id',id).eq('user_id',user.id);
+    if(error)throw error;
+    state.goals=(state.goals||[]).filter(x=>x.id!==id);
+    renderGoals();
+    toast('Meta excluída.');
+  }catch(error){
+    toast('Não foi possível excluir: '+humanError(error));
+  }
+}
+
+function renderGoals(){
+  const list=document.getElementById('goalList');
+  if(!list)return;
+  const goals=state?.goals||[];
+
+  if(!goals.length){
+    list.innerHTML='<div class="result"><span class="tag">PRÓXIMO OBJETIVO</span><p>Crie sua primeira meta e comece a dar destino ao seu dinheiro.</p></div>';
+    return;
+  }
+
+  list.innerHTML=goals.map(g=>{
+    const target=Math.max(0,g.target_amount);
+    const saved=Math.min(Math.max(0,g.saved_amount),target);
+    const percent=target>0?Math.min(100,(saved/target)*100):0;
+    const remaining=Math.max(0,target-saved);
+
+    return '<div class="result">'+
+      '<span class="tag">'+(percent>=100?'META ATINGIDA 🎉':'META')+'</span>'+
+      '<h3>'+escapeHtml(g.name)+'</h3>'+
+      '<div class="big">'+money(saved)+' / '+money(target)+'</div>'+
+      '<p>Progresso: <b>'+percent.toFixed(0)+'%</b><br>'+
+      (remaining>0?'Faltam <b>'+money(remaining)+'</b>.':'Você chegou ao objetivo.')+
+      (g.target_date?'<br>Data desejada: <b>'+formatDate(g.target_date)+'</b>.':'')+'</p>'+
+      '<div style="height:8px;background:var(--card2);border-radius:99px;overflow:hidden;margin:10px 0 14px">'+
+      '<div style="height:100%;width:'+percent+'%;background:var(--accent);border-radius:99px"></div></div>'+
+      '<button class="btn danger" onclick="deleteGoal(\''+g.id+'\')">EXCLUIR META</button>'+
+    '</div>';
+  }).join('');
+}
+
+
 function show(id){
   document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
   const target=document.getElementById(id);
@@ -802,6 +1002,8 @@ function show(id){
 
   if(id==='future')renderFuture();
   if(id==='commitments')renderCommitments();
+  if(id==='history')renderHistory();
+  if(id==='goals')renderGoals();
   if(id==='buy')document.getElementById('buyResult').innerHTML='';
   window.scrollTo({top:0,behavior:'smooth'});
 }
