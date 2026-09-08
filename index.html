@@ -105,86 +105,256 @@ button,input,select{font:inherit}.top{display:flex;align-items:center;justify-co
 
 <script>
 const money=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n||0);
-function num(v){let s=String(v||'').trim().replace(/\s/g,'');if(!s)return 0;if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');else if(s.includes(','))s=s.replace(',','.');return Number(s)||0}
-function load(){try{return JSON.parse(localStorage.getItem('pilotoMes')||'null')}catch(e){return null}}
+
+function num(v){
+  let s=String(v||'').trim().replace(/\s/g,'');
+  if(!s)return 0;
+  if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');
+  else if(s.includes(','))s=s.replace(',','.');
+  return Number(s)||0;
+}
+
+function load(){
+  try{return JSON.parse(localStorage.getItem('pilotoMes')||'null')}
+  catch(e){return null}
+}
+
 let state=load();
-function save(){localStorage.setItem('pilotoMes',JSON.stringify(state))}
+
+function save(){
+  localStorage.setItem('pilotoMes',JSON.stringify(state));
+}
+
 function show(id){
-document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
-document.getElementById(id).classList.add('active');
-document.getElementById('navHome').classList.toggle('active',id==='home');
-if(id==='future')renderFuture();
-if(id==='buy')document.getElementById('buyResult').innerHTML='';
-window.scrollTo({top:0,behavior:'smooth'});
+  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('navHome').classList.toggle('active',id==='home');
+  if(id==='future')renderFuture();
+  if(id==='buy')document.getElementById('buyResult').innerHTML='';
+  window.scrollTo({top:0,behavior:'smooth'});
 }
-function daysUntil(date){const now=new Date();now.setHours(0,0,0,0);const d=new Date(date+'T00:00:00');d.setHours(0,0,0,0);return Math.max(1,Math.ceil((d-now)/86400000))}
+
+function daysUntil(date){
+  const now=new Date();
+  now.setHours(0,0,0,0);
+  const d=new Date(date+'T00:00:00');
+  d.setHours(0,0,0,0);
+  return Math.max(1,Math.ceil((d-now)/86400000));
+}
+
 function recalc(){
-if(!state)return;
-const d=daysUntil(state.payday);
-state.days=d;
-const totalExpenses=(state.expenses||[]).reduce((a,x)=>a+x.value,0);
-const totalIncome=(state.extraIncome||[]).reduce((a,x)=>a+x.value,0);
-const current=state.balance+totalIncome-totalExpenses;
-const free=Math.max(0,current-state.bills-state.reserve);
-state.current=current;state.free=free;state.recommended=(free/d)*.9;
-save();render();
+  if(!state)return;
+
+  const d=daysUntil(state.payday);
+  state.days=d;
+
+  const totalExpenses=(state.expenses||[]).reduce((a,x)=>a+x.value,0);
+  const totalIncome=(state.extraIncome||[]).reduce((a,x)=>a+x.value,0);
+
+  const current=state.balance+totalIncome-totalExpenses;
+  const free=Math.max(0,current-state.bills-state.reserve);
+
+  state.current=current;
+  state.free=free;
+  state.recommended=(free/d)*.9;
+
+  save();
+  render();
 }
+
 function render(){
-if(!state)return;
-document.getElementById('daily').textContent=money(state.recommended);
-document.getElementById('free').textContent=money(state.free);
-document.getElementById('reserve').textContent=money(state.reserve);
-document.getElementById('bills').textContent=money(state.bills);
-document.getElementById('days').textContent=state.days+' '+(state.days===1?'dia':'dias');
-const status=document.getElementById('status');
-status.textContent=state.recommended>0?'Seu mês está no radar':'Atenção: sua margem está comprometida';
+  if(!state)return;
+
+  document.getElementById('daily').textContent=money(state.recommended);
+  document.getElementById('free').textContent=money(state.free);
+  document.getElementById('reserve').textContent=money(state.reserve);
+  document.getElementById('bills').textContent=money(state.bills);
+  document.getElementById('days').textContent=state.days+' '+(state.days===1?'dia':'dias');
+
+  const status=document.getElementById('status');
+  status.textContent=state.recommended>0?'Seu mês está no radar':'Atenção: sua margem está comprometida';
 }
+
 function calculate(){
-const balance=num(document.getElementById('balance').value),income=num(document.getElementById('income').value),reserve=num(document.getElementById('reserveIn').value),bills=num(document.getElementById('billsIn').value),payday=document.getElementById('payday').value;
-if(balance<=0||!payday){document.getElementById('setupError').style.display='block';return}
-document.getElementById('setupError').style.display='none';
-state={balance,income,reserve,bills,payday,expenses:[],extraIncome:[]};
-recalc();show('home');toast('Seu mês foi pilotado com sucesso. 🚀');
+  const balance=num(document.getElementById('balance').value);
+  const income=num(document.getElementById('income').value);
+  const reserve=num(document.getElementById('reserveIn').value);
+  const bills=num(document.getElementById('billsIn').value);
+  const payday=document.getElementById('payday').value;
+
+  if(balance<=0||!payday){
+    document.getElementById('setupError').style.display='block';
+    return;
+  }
+
+  document.getElementById('setupError').style.display='none';
+
+  state={
+    balance,
+    income,
+    reserve,
+    bills,
+    payday,
+    expenses:[],
+    extraIncome:[]
+  };
+
+  recalc();
+  show('home');
+  toast('Seu mês foi pilotado com sucesso. 🚀');
 }
+
 function addExpense(){
-if(!state){show('setup');return}
-const value=num(document.getElementById('expenseValue').value),name=document.getElementById('expenseName').value.trim()||'Gasto';
-if(value<=0)return;
-state.expenses=state.expenses||[];state.expenses.push({value,name,at:new Date().toISOString()});recalc();
-document.getElementById('expenseResult').innerHTML='<div class="result"><span class="tag">ATUALIZADO</span><div class="big">'+money(state.recommended)+'/dia</div><p>Seu novo limite recomendado foi recalculado.</p></div>';
-document.getElementById('expenseValue').value='';document.getElementById('expenseName').value='';
+  if(!state){show('setup');return}
+
+  const value=num(document.getElementById('expenseValue').value);
+  const name=document.getElementById('expenseName').value.trim()||'Gasto';
+
+  if(value<=0)return;
+
+  state.expenses=state.expenses||[];
+  state.expenses.push({value,name,at:new Date().toISOString()});
+  recalc();
+
+  document.getElementById('expenseResult').innerHTML=
+    '<div class="result"><span class="tag">ATUALIZADO</span><div class="big">'+money(state.recommended)+'/dia</div><p>Seu novo limite recomendado foi recalculado.</p></div>';
+
+  document.getElementById('expenseValue').value='';
+  document.getElementById('expenseName').value='';
+
+  toast('Gasto registrado e mês atualizado.');
 }
+
 function addIncome(){
-if(!state){show('setup');return}
-const value=num(document.getElementById('incomeValue').value),name=document.getElementById('incomeName').value.trim()||'Entrada';
-if(value<=0)return;
-state.extraIncome=state.extraIncome||[];state.extraIncome.push({value,name,at:new Date().toISOString()});recalc();
-document.getElementById('incomeResult').innerHTML='<div class="result"><span class="tag">ATUALIZADO</span><div class="big">'+money(state.recommended)+'/dia</div><p>Seu limite aumentou de acordo com a nova entrada.</p></div>';
-document.getElementById('incomeValue').value='';document.getElementById('incomeName').value='';
+  if(!state){show('setup');return}
+
+  const value=num(document.getElementById('incomeValue').value);
+  const name=document.getElementById('incomeName').value.trim()||'Entrada';
+
+  if(value<=0)return;
+
+  state.extraIncome=state.extraIncome||[];
+  state.extraIncome.push({value,name,at:new Date().toISOString()});
+  recalc();
+
+  document.getElementById('incomeResult').innerHTML=
+    '<div class="result"><span class="tag">ATUALIZADO</span><div class="big">'+money(state.recommended)+'/dia</div><p>Seu limite aumentou de acordo com a nova entrada.</p></div>';
+
+  document.getElementById('incomeValue').value='';
+  document.getElementById('incomeName').value='';
+
+  toast('Entrada registrada e mês atualizado.');
 }
+
 function simulate(){
-const p=num(document.getElementById('purchase').value),result=document.getElementById('buyResult');
-if(!state){result.innerHTML='<div class="result"><span class="tag bad">PRIMEIRO PASSO</span><p>Configure seu mês para eu calcular o impacto real.</p></div>';return}
-if(p<=0)return;
-const newFree=state.free-p,newDaily=Math.max(0,(newFree/state.days)*.9);
-let title='🟢 CABE NO SEU PLANO',tag='tag';
-if(p>state.free){title='🔴 NÃO É SEGURO';tag='tag bad'}
-else if(newDaily<state.recommended*.75){title='🟡 CABE, MAS VAI APERTAR';tag='tag warn'}
-result.innerHTML='<div class="result"><span class="'+tag+'">'+title+'</span><div class="big">'+money(newDaily)+'/dia</div><p>Antes: <b>'+money(state.recommended)+'/dia</b><br>Depois da compra: <b>'+money(newDaily)+'/dia</b><br>Dinheiro livre depois: <b>'+money(Math.max(0,newFree))+'</b></p></div>';
+  const p=num(document.getElementById('purchase').value);
+  const result=document.getElementById('buyResult');
+
+  if(!state){
+    result.innerHTML='<div class="result"><span class="tag bad">PRIMEIRO PASSO</span><p>Configure seu mês para eu calcular o impacto real.</p></div>';
+    return;
+  }
+
+  if(p<=0)return;
+
+  const newFree=state.free-p;
+  const newDaily=Math.max(0,(newFree/state.days)*.9);
+
+  let title='🟢 CABE NO SEU PLANO';
+  let tag='tag';
+
+  if(p>state.free){
+    title='🔴 NÃO É SEGURO';
+    tag='tag bad';
+  }else if(newDaily<state.recommended*.75){
+    title='🟡 CABE, MAS VAI APERTAR';
+    tag='tag warn';
+  }
+
+  let html=
+    '<div class="result">'+
+    '<span class="'+tag+'">'+title+'</span>'+
+    '<div class="big">'+money(newDaily)+'/dia</div>'+
+    '<p>Antes: <b>'+money(state.recommended)+'/dia</b><br>'+
+    'Depois da compra: <b>'+money(newDaily)+'/dia</b><br>'+
+    'Dinheiro livre depois: <b>'+money(Math.max(0,newFree))+'</b></p>';
+
+  if(p<=state.free){
+    html+='<button class="btn good" onclick="confirmPurchase('+p+')">CONFIRMAR COMPRA E ATUALIZAR</button>';
+  }else{
+    html+='<p><b>Não confirme esta compra.</b> Ela ultrapassa seu dinheiro livre.</p>';
+  }
+
+  html+='</div>';
+  result.innerHTML=html;
 }
+
+function confirmPurchase(value){
+  if(!state||value<=0||value>state.free)return;
+
+  state.expenses=state.expenses||[];
+  state.expenses.push({
+    value,
+    name:'Compra confirmada',
+    at:new Date().toISOString()
+  });
+
+  recalc();
+
+  document.getElementById('purchase').value='';
+  document.getElementById('buyResult').innerHTML=
+    '<div class="result"><span class="tag">COMPRA CONFIRMADA</span><div class="big">'+money(state.recommended)+'/dia</div><p>Agora o gasto faz parte do seu mês. O limite principal foi atualizado.</p></div>';
+
+  toast('Compra registrada. Seu mês mudou. ✅');
+}
+
 function renderFuture(){
-const r=document.getElementById('futureResult');
-if(!state){r.innerHTML='<div class="result"><p>Configure seu mês primeiro.</p></div>';return}
-const expenses=(state.expenses||[]).reduce((a,x)=>a+x.value,0),income=(state.extraIncome||[]).reduce((a,x)=>a+x.value,0);
-const projected=Math.max(0,state.current-state.bills-state.reserve);
-const dailyReal=state.days?expenses/Math.max(1,30-state.days):0;
-let tag='tag',label='🟢 DENTRO DO PLANO';
-if(state.recommended<=0){tag='tag bad';label='🔴 PRECISA DE ATENÇÃO'}
-else if(dailyReal>state.recommended){tag='tag warn';label='🟡 SEU RITMO ESTÁ ALTO'}
-r.innerHTML='<div class="result"><span class="'+tag+'">'+label+'</span><h3>Resumo do seu cenário</h3><p>Dinheiro livre agora</p><div class="big">'+money(projected)+'</div><p>Limite recomendado atual: <b>'+money(state.recommended)+'/dia</b><br>Próximo recebimento: <b>'+money(state.income)+'</b><br>Faltam aproximadamente <b>'+state.days+' dias</b>.</p><p>Quanto mais você registra os gastos, melhor o Piloto consegue acompanhar o seu ritmo.</p></div>';
+  const r=document.getElementById('futureResult');
+
+  if(!state){
+    r.innerHTML='<div class="result"><p>Configure seu mês primeiro.</p></div>';
+    return;
+  }
+
+  const expenses=(state.expenses||[]).reduce((a,x)=>a+x.value,0);
+  const projected=Math.max(0,state.current-state.bills-state.reserve);
+  const dailyReal=state.days?expenses/Math.max(1,30-state.days):0;
+
+  let tag='tag',label='🟢 DENTRO DO PLANO';
+
+  if(state.recommended<=0){
+    tag='tag bad';
+    label='🔴 PRECISA DE ATENÇÃO';
+  }else if(dailyReal>state.recommended){
+    tag='tag warn';
+    label='🟡 SEU RITMO ESTÁ ALTO';
+  }
+
+  r.innerHTML=
+    '<div class="result">'+
+    '<span class="'+tag+'">'+label+'</span>'+
+    '<h3>Resumo do seu cenário</h3>'+
+    '<p>Dinheiro livre agora</p>'+
+    '<div class="big">'+money(projected)+'</div>'+
+    '<p>Limite recomendado atual: <b>'+money(state.recommended)+'/dia</b><br>'+
+    'Próximo recebimento: <b>'+money(state.income)+'</b><br>'+
+    'Faltam aproximadamente <b>'+state.days+' dias</b>.</p>'+
+    '<p>Quanto mais você registra os gastos, melhor o Piloto consegue acompanhar o seu ritmo.</p>'+
+    '</div>';
 }
-function toast(t){const x=document.getElementById('toast');x.textContent=t;x.style.display='block';setTimeout(()=>x.style.display='none',2200)}
-if(state){recalc()}else{document.getElementById('payday').value=''}
+
+function toast(t){
+  const x=document.getElementById('toast');
+  x.textContent=t;
+  x.style.display='block';
+  setTimeout(()=>x.style.display='none',2200);
+}
+
+if(state){
+  recalc();
+}else{
+  document.getElementById('payday').value='';
+}
 </script>
 </body>
-                                                  </html>
+                                                                        </html>
