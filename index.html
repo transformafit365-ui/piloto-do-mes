@@ -72,6 +72,7 @@ input:focus{border-color:var(--accent)}
 .account small{color:var(--muted);display:block;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .logout{background:none;border:0;color:var(--bad);font-size:12px;font-weight:800}
 .loading{text-align:center;color:var(--muted);padding:40px 0}
+.list{display:grid;gap:9px;margin-top:12px}.item{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:15px;padding:13px}.item strong{display:block}.item small{color:var(--muted)}.item button{background:none;border:0;color:var(--bad);font-size:12px;font-weight:800}.date{font-size:11px;color:var(--muted);margin-top:3px}
 </style>
 </head>
 
@@ -144,6 +145,7 @@ input:focus{border-color:var(--accent)}
         <button class="action" onclick="show('incomeAdd')"><span>💰</span>Recebi<small>Registrar entrada</small></button>
         <button class="action" onclick="show('buy')"><span>🛒</span>Posso comprar?<small>Simular antes</small></button>
         <button class="action" onclick="show('future')"><span>🔮</span>Meu futuro<small>Ver projeção</small></button>
+        <button class="action" onclick="show('commitments')"><span>📅</span>Contas futuras<small>Organizar compromissos</small></button>
       </div>
 
       <div style="margin-top:14px">
@@ -199,6 +201,23 @@ input:focus{border-color:var(--accent)}
       <div class="field"><label>Quanto você quer gastar?</label><input id="purchase" inputmode="decimal" placeholder="Ex.: 150"></div>
       <button class="btn" onclick="simulate()">SIMULAR COMPRA</button>
       <div id="buyResult"></div>
+    </section>
+
+    <section id="commitments" class="screen">
+      <button class="back" onclick="show('home')">← Voltar</button>
+      <h1>Contas futuras.</h1>
+      <p class="sub">Agora o Piloto sabe <b>quando</b> seu dinheiro vai ser necessário, e não apenas quanto.</p>
+
+      <div class="field"><label>Nome da conta</label><input id="commitmentName" placeholder="Ex.: aluguel"></div>
+      <div class="row">
+        <div class="field"><label>Valor</label><input id="commitmentValue" inputmode="decimal" placeholder="Ex.: 1200"></div>
+        <div class="field"><label>Vencimento</label><input id="commitmentDate" type="date"></div>
+      </div>
+      <button class="btn" onclick="addCommitment()">ADICIONAR CONTA</button>
+
+      <div id="commitmentResult"></div>
+      <div class="section-title">Próximos compromissos</div>
+      <div id="commitmentList" class="list"></div>
     </section>
 
     <section id="future" class="screen">
@@ -353,6 +372,14 @@ async function loadUserData(){
 
   if(txError)throw txError;
 
+  const {data:commitments,error:commitmentError}=await db
+    .from('commitments')
+    .select('*')
+    .eq('user_id',user.id)
+    .order('due_date',{ascending:true});
+
+  if(commitmentError)throw commitmentError;
+
   state={
     balance:Number(profile.balance)||0,
     income:Number(profile.income)||0,
@@ -364,6 +391,9 @@ async function loadUserData(){
     })),
     extraIncome:(transactions||[]).filter(x=>x.type==='income').map(x=>({
       id:x.id,value:Number(x.amount)||0,name:x.description||'Entrada',at:x.created_at
+    })),
+    commitments:(commitments||[]).map(x=>({
+      id:x.id,description:x.description,amount:Number(x.amount)||0,due_date:x.due_date
     }))
   };
 }
@@ -408,22 +438,54 @@ function recalc(){
   const totalIncome=(state.extraIncome||[]).reduce((a,x)=>a+x.value,0);
 
   const current=state.balance+totalIncome-totalExpenses;
-  const free=Math.max(0,current-state.bills-state.reserve);
+
+  const today=new Date();
+  today.setHours(0,0,0,0);
+  const payday=new Date(state.payday+'T00:00:00');
+  payday.setHours(0,0,0,0);
+
+  const pending=(state.commitments||[])
+    .filter(x=>new Date(x.due_date+'T00:00:00')<=payday && new Date(x.due_date+'T00:00:00')>=today)
+    .sort((a,b)=>a.due_date.localeCompare(b.due_date));
+
+  const scheduledBills=pending.reduce((a,x)=>a+x.amount,0);
+  const fallbackBills=pending.length?0:state.bills;
+  const commitmentsTotal=scheduledBills+fallbackBills;
+
+  let moneyLeft=current-state.reserve;
+  let cursor=new Date(today);
+  let smartDaily=moneyLeft>0 ? moneyLeft/state.days : 0;
+
+  for(const bill of pending){
+    const due=new Date(bill.due_date+'T00:00:00');
+    const interval=Math.max(1,Math.ceil((due-cursor)/86400000));
+    const safeForInterval=Math.max(0,moneyLeft/interval)*.9;
+    smartDaily=Math.min(smartDaily,safeForInterval);
+    moneyLeft-=bill.amount;
+    cursor=due;
+  }
+
+  const afterBills=Math.max(0,moneyLeft);
+  const remainingAfterLast=Math.max(1,Math.ceil((payday-cursor)/86400000)+1);
+  if(afterBills>=0)smartDaily=Math.min(smartDaily,(afterBills/remainingAfterLast)*.9);
+
+  const free=Math.max(0,current-state.reserve-commitmentsTotal);
 
   state.current=current;
   state.free=free;
-  state.recommended=(free/state.days)*.9;
+  state.commitmentsTotal=commitmentsTotal;
+  state.recommended=Math.max(0,smartDaily);
 
   render();
+  renderCommitments();
 }
-
 function render(){
   if(!state)return;
 
   document.getElementById('daily').textContent=money(state.recommended);
   document.getElementById('free').textContent=money(state.free);
   document.getElementById('reserve').textContent=money(state.reserve);
-  document.getElementById('bills').textContent=money(state.bills);
+  document.getElementById('bills').textContent=money(state.commitmentsTotal ?? state.bills);
   document.getElementById('days').textContent=state.days+' '+(state.days===1?'dia':'dias');
 
   const status=document.getElementById('status');
@@ -606,6 +668,96 @@ async function confirmPurchase(value){
   }
 }
 
+async function addCommitment(){
+  if(!state){show('setup');return}
+
+  const description=document.getElementById('commitmentName').value.trim()||'Conta';
+  const amount=num(document.getElementById('commitmentValue').value);
+  const due_date=document.getElementById('commitmentDate').value;
+
+  if(amount<=0||!due_date){
+    toast('Informe nome, valor e vencimento.');
+    return;
+  }
+
+  if(new Date(due_date+'T00:00:00')<new Date()){
+    toast('Escolha um vencimento futuro.');
+    return;
+  }
+
+  try{
+    const {data,error}=await db.from('commitments').insert({
+      user_id:user.id,description,amount,due_date
+    }).select().single();
+
+    if(error)throw error;
+
+    state.commitments=state.commitments||[];
+    state.commitments.push({id:data.id,description,amount:Number(data.amount),due_date:data.due_date});
+    state.commitments.sort((a,b)=>a.due_date.localeCompare(b.due_date));
+
+    recalc();
+
+    document.getElementById('commitmentName').value='';
+    document.getElementById('commitmentValue').value='';
+    document.getElementById('commitmentDate').value='';
+
+    document.getElementById('commitmentResult').innerHTML=
+      '<div class="result"><span class="tag">CONTA ADICIONADA</span><p>O Piloto agora considera o vencimento dessa conta no seu limite diário.</p></div>';
+
+    toast('Conta adicionada ao seu futuro. 📅');
+  }catch(error){
+    toast('Não foi possível adicionar: '+humanError(error));
+  }
+}
+
+async function deleteCommitment(id){
+  if(!state)return;
+
+  try{
+    const {error}=await db.from('commitments').delete().eq('id',id).eq('user_id',user.id);
+    if(error)throw error;
+
+    state.commitments=(state.commitments||[]).filter(x=>x.id!==id);
+    recalc();
+    toast('Conta removida.');
+  }catch(error){
+    toast('Não foi possível remover: '+humanError(error));
+  }
+}
+
+function formatDate(date){
+  return new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit'}).format(new Date(date+'T00:00:00'));
+}
+
+function renderCommitments(){
+  const list=document.getElementById('commitmentList');
+  if(!list)return;
+
+  const today=new Date();
+  today.setHours(0,0,0,0);
+
+  const items=(state?.commitments||[])
+    .filter(x=>new Date(x.due_date+'T00:00:00')>=today)
+    .sort((a,b)=>a.due_date.localeCompare(b.due_date));
+
+  if(!items.length){
+    list.innerHTML='<div class="empty">Nenhuma conta futura cadastrada.</div>';
+    return;
+  }
+
+  list.innerHTML=items.map(x=>
+    '<div class="item">'+
+      '<div><strong>'+escapeHtml(x.description)+'</strong><small>'+money(x.amount)+'</small><div class="date">Vence em '+formatDate(x.due_date)+'</div></div>'+
+      '<button onclick="deleteCommitment(\''+x.id+'\')">EXCLUIR</button>'+
+    '</div>'
+  ).join('');
+}
+
+function escapeHtml(text){
+  return String(text).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+
 function renderFuture(){
   const r=document.getElementById('futureResult');
 
@@ -615,7 +767,7 @@ function renderFuture(){
   }
 
   const expenses=(state.expenses||[]).reduce((a,x)=>a+x.value,0);
-  const projected=Math.max(0,state.current-state.bills-state.reserve);
+  const projected=Math.max(0,state.current-(state.commitmentsTotal ?? state.bills)-state.reserve);
   const elapsed=Math.max(1,30-state.days);
   const dailyReal=expenses/elapsed;
 
@@ -649,6 +801,7 @@ function show(id){
   document.getElementById('navHome').classList.toggle('active',id==='home');
 
   if(id==='future')renderFuture();
+  if(id==='commitments')renderCommitments();
   if(id==='buy')document.getElementById('buyResult').innerHTML='';
   window.scrollTo({top:0,behavior:'smooth'});
 }
