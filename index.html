@@ -294,7 +294,7 @@ function confirmPurchase(value){
 
   state.expenses=state.expenses||[];
   state.expenses.push({
-    value,
+    value:Number(value),
     name:'Compra confirmada',
     at:new Date().toISOString()
   });
@@ -302,10 +302,11 @@ function confirmPurchase(value){
   recalc();
 
   document.getElementById('purchase').value='';
-  document.getElementById('buyResult').innerHTML=
-    '<div class="result"><span class="tag">COMPRA CONFIRMADA</span><div class="big">'+money(state.recommended)+'/dia</div><p>Agora o gasto faz parte do seu mês. O limite principal foi atualizado.</p></div>';
-
   toast('Compra registrada. Seu mês mudou. ✅');
+
+  setTimeout(function(){
+    show('home');
+  },500);
 }
 
 function renderFuture(){
@@ -357,4 +358,4 @@ if(state){
 }
 </script>
 </body>
-                                                                        </html>
+  </html>
