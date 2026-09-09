@@ -132,6 +132,8 @@ input:focus{border-color:var(--accent)}
         <div class="status"><span class="dot" id="statusDot"></span><span id="status">Configure seu mês para começar</span></div>
       </div>
 
+      <div id="brainCard" class="result" style="margin-top:12px"></div>
+
       <div class="grid">
         <div class="card"><div class="label">Dinheiro livre</div><div class="value" id="free">R$ 0,00</div></div>
         <div class="card"><div class="label">Protegido</div><div class="value" id="reserve">R$ 0,00</div></div>
@@ -148,6 +150,7 @@ input:focus{border-color:var(--accent)}
         <button class="action" onclick="show('commitments')"><span>📅</span>Contas futuras<small>Organizar compromissos</small></button>
         <button class="action" onclick="show('history')"><span>📜</span>Histórico<small>Ver movimentações</small></button>
         <button class="action" onclick="show('goals')"><span>🎯</span>Metas<small>Guardar para objetivos</small></button>
+        <button class="action" onclick="show('rescue')"><span>🚨</span>Modo Socorro<small>Quando o mês apertar</small></button>
       </div>
 
       <div style="margin-top:14px">
@@ -235,6 +238,13 @@ input:focus{border-color:var(--accent)}
       <p class="sub">Veja tudo que entrou e saiu da sua conta.</p>
       <div id="historySummary"></div>
       <div id="historyList" class="list"></div>
+    </section>
+
+    <section id="rescue" class="screen">
+      <button class="back" onclick="show('home')">← Voltar</button>
+      <h1>Modo Socorro.</h1>
+      <p class="sub">Quando o dinheiro aperta, o Piloto troca a bússola por um plano de emergência.</p>
+      <div id="rescueResult"></div>
     </section>
 
     <section id="goals" class="screen">
@@ -476,16 +486,19 @@ function recalc(){
 
   const totalExpenses=(state.expenses||[]).reduce((a,x)=>a+x.value,0);
   const totalIncome=(state.extraIncome||[]).reduce((a,x)=>a+x.value,0);
-
   const current=state.balance+totalIncome-totalExpenses;
 
   const today=new Date();
   today.setHours(0,0,0,0);
+
   const payday=new Date(state.payday+'T00:00:00');
   payday.setHours(0,0,0,0);
 
   const pending=(state.commitments||[])
-    .filter(x=>new Date(x.due_date+'T00:00:00')<=payday && new Date(x.due_date+'T00:00:00')>=today)
+    .filter(x=>{
+      const d=new Date(x.due_date+'T00:00:00');
+      return d<=payday && d>=today;
+    })
     .sort((a,b)=>a.due_date.localeCompare(b.due_date));
 
   const scheduledBills=pending.reduce((a,x)=>a+x.amount,0);
@@ -507,41 +520,144 @@ function recalc(){
 
   const afterBills=Math.max(0,moneyLeft);
   const remainingAfterLast=Math.max(1,Math.ceil((payday-cursor)/86400000)+1);
-  if(afterBills>=0)smartDaily=Math.min(smartDaily,(afterBills/remainingAfterLast)*.9);
 
-  const free=Math.max(0,current-state.reserve-commitmentsTotal);
+  if(afterBills>=0){
+    smartDaily=Math.min(
+      smartDaily,
+      (afterBills/remainingAfterLast)*.9
+    );
+  }
+
+  const free=Math.max(
+    0,
+    current-state.reserve-commitmentsTotal
+  );
+
+  const elapsed=Math.max(
+    1,
+    30-state.days
+  );
+
+  const dailyReal=totalExpenses/elapsed;
+
+  const nextCommitment=pending[0]||null;
 
   state.current=current;
   state.free=free;
   state.commitmentsTotal=commitmentsTotal;
   state.recommended=Math.max(0,smartDaily);
+  state.dailyReal=dailyReal;
+  state.nextCommitment=nextCommitment;
+  state.safetyLevel=calculateSafetyLevel();
+  state.brainMessage=calculateBrainMessage();
 
   render();
   renderCommitments();
 }
+
+function calculateSafetyLevel(){
+  if(!state)return'bad';
+
+  if(state.recommended<=0)return'bad';
+
+  if(state.free<=0)return'bad';
+
+  if(state.dailyReal>0 && state.dailyReal>state.recommended*1.35){
+    return'bad';
+  }
+
+  if(state.recommended<30)return'warn';
+
+  if(state.dailyReal>0 && state.dailyReal>state.recommended){
+    return'warn';
+  }
+
+  return'good';
+}
+
+function calculateBrainMessage(){
+  if(!state)return'Configure seu mês para começar.';
+
+  if(state.recommended<=0){
+    return'Sua margem para gastos está zerada. Priorize contas essenciais e preserve sua reserva até o próximo recebimento.';
+  }
+
+  if(state.free<=0){
+    return'Seu dinheiro livre acabou. Evite novos gastos não essenciais até reorganizar o mês.';
+  }
+
+  if(state.dailyReal>0 && state.dailyReal>state.recommended*1.35){
+    return'Você está gastando acima do ritmo seguro. Reduza os gastos nos próximos dias para recuperar margem.';
+  }
+
+  if(state.nextCommitment){
+    const due=daysUntil(state.nextCommitment.due_date);
+    if(due<=2){
+      return'Existe uma conta importante chegando. Segure gastos extras até ela passar.';
+    }
+  }
+
+  if(state.recommended<30){
+    return'Sua margem está apertada. Prefira gastos essenciais e acompanhe o Piloto diariamente.';
+  }
+
+  if(state.dailyReal>0 && state.dailyReal>state.recommended){
+    return'Seu ritmo de gastos está acima do limite recomendado. Diminuir um pouco agora protege os próximos dias.';
+  }
+
+  return'Seu mês está saudável. Você tem margem, mas continue registrando os gastos para manter o controle.';
+}
+
 function render(){
   if(!state)return;
 
   document.getElementById('daily').textContent=money(state.recommended);
   document.getElementById('free').textContent=money(state.free);
   document.getElementById('reserve').textContent=money(state.reserve);
-  document.getElementById('bills').textContent=money(state.commitmentsTotal ?? state.bills);
-  document.getElementById('days').textContent=state.days+' '+(state.days===1?'dia':'dias');
+  document.getElementById('bills').textContent=money(
+    state.commitmentsTotal ?? state.bills
+  );
+  document.getElementById('days').textContent=
+    state.days+' '+(state.days===1?'dia':'dias');
 
   const status=document.getElementById('status');
   const dot=document.getElementById('statusDot');
 
-  if(state.recommended<=0){
+  if(state.safetyLevel==='bad'){
     status.textContent='Atenção: sua margem está comprometida';
     dot.style.background='var(--bad)';
-  }else if(state.recommended<30){
+  }else if(state.safetyLevel==='warn'){
     status.textContent='Atenção: vá com calma hoje';
     dot.style.background='var(--warn)';
   }else{
     status.textContent='Seu mês está no radar';
     dot.style.background='var(--good)';
   }
+
+  const brain=document.getElementById('brainCard');
+
+  if(brain){
+    let tag='tag';
+    let title='🧠 O PILOTO DIZ';
+    let action='Ver Modo Socorro';
+
+    if(state.safetyLevel==='bad'){
+      tag='tag bad';
+      title='🚨 MODO SOCORRO';
+      action='ABRIR MODO SOCORRO';
+    }else if(state.safetyLevel==='warn'){
+      tag='tag warn';
+      title='🟡 ATENÇÃO';
+      action='VER ORIENTAÇÃO';
+    }
+
+    brain.innerHTML=
+      '<span class="'+tag+'">'+title+'</span>'+
+      '<p>'+escapeHtml(state.brainMessage)+'</p>'+
+      '<button class="btn secondary" onclick="show(\'rescue\')">'+action+'</button>';
+  }
 }
+
 
 async function calculate(){
   const balance=num(document.getElementById('balance').value);
@@ -993,6 +1109,140 @@ function renderGoals(){
 }
 
 
+
+function renderRescue(){
+  const r=document.getElementById('rescueResult');
+  if(!r)return;
+
+  if(!state){
+    r.innerHTML='<div class="result"><p>Configure seu mês primeiro.</p></div>';
+    return;
+  }
+
+  const level=state.safetyLevel||'good';
+
+  let tag='tag';
+  let title='🟢 SITUAÇÃO CONTROLADA';
+
+  if(level==='bad'){
+    tag='tag bad';
+    title='🔴 PRIORIDADE: PROTEGER O MÊS';
+  }else if(level==='warn'){
+    tag='tag warn';
+    title='🟡 REDUZA O RITMO';
+  }
+
+  const target=Math.max(
+    0,
+    state.recommended
+  );
+
+  const suggestedCut=Math.max(
+    0,
+    state.dailyReal-target
+  );
+
+  let tips=[];
+
+  if(level==='bad'){
+    tips=[
+      'Pause compras não essenciais.',
+      'Proteja primeiro as contas com vencimento próximo.',
+      'Evite usar o dinheiro reservado.',
+      'Registre todas as despesas até o próximo recebimento.'
+    ];
+  }else if(level==='warn'){
+    tips=[
+      'Mantenha seus gastos próximos do limite diário.',
+      'Adie compras que não sejam necessárias.',
+      'Observe as contas futuras antes de assumir novos compromissos.'
+    ];
+  }else{
+    tips=[
+      'Continue registrando seus gastos.',
+      'Use “Posso comprar?” antes de compras maiores.',
+      'Considere direcionar parte da margem para uma meta.'
+    ];
+  }
+
+  const next=state.nextCommitment
+    ? '<p>Próxima conta: <b>'+escapeHtml(state.nextCommitment.description)+'</b> de <b>'+
+      money(state.nextCommitment.amount)+'</b>, em <b>'+
+      daysUntil(state.nextCommitment.due_date)+' dias</b>.</p>'
+    : '<p>Não há conta futura cadastrada antes do próximo recebimento.</p>';
+
+  r.innerHTML=
+    '<div class="result">'+
+      '<span class="'+tag+'">'+title+'</span>'+
+      '<h3>Seu plano agora</h3>'+
+      '<div class="big">'+money(target)+'/dia</div>'+
+      '<p>'+escapeHtml(state.brainMessage)+'</p>'+
+      (suggestedCut>0
+        ? '<p>Para voltar ao ritmo seguro, tente reduzir cerca de <b>'+
+          money(suggestedCut)+'/dia</b> em relação ao seu ritmo atual.</p>'
+        : '')+
+      next+
+      '<div class="section-title">O que fazer</div>'+
+      '<div class="list">'+
+        tips.map(t=>'<div class="item"><div><strong>• '+escapeHtml(t)+'</strong></div></div>').join('')+
+      '</div>'+
+    '</div>';
+}
+
+function simulate(){
+  const p=num(document.getElementById('purchase').value);
+  const result=document.getElementById('buyResult');
+
+  if(!state){
+    result.innerHTML='<div class="result"><span class="tag bad">PRIMEIRO PASSO</span><p>Configure seu mês para eu calcular o impacto real.</p></div>';
+    return;
+  }
+
+  if(p<=0){
+    toast('Informe o valor da compra.');
+    return;
+  }
+
+  const newFree=state.free-p;
+
+  if(p>state.free){
+    result.innerHTML=
+      '<div class="result">'+
+      '<span class="tag bad">🔴 NÃO É SEGURO</span>'+
+      '<div class="big">'+money(0)+'/dia</div>'+
+      '<p>Essa compra ultrapassa seu dinheiro livre em <b>'+
+      money(p-state.free)+'</b>.</p>'+
+      '<p>Se for essencial, reorganize suas contas antes de confirmar.</p>'+
+      '</div>';
+    return;
+  }
+
+  const newDaily=Math.max(
+    0,
+    (newFree/state.days)*.9
+  );
+
+  let title='🟢 CABE NO SEU PLANO';
+  let tag='tag';
+
+  if(newDaily<state.recommended*.75){
+    title='🟡 CABE, MAS VAI APERTAR';
+    tag='tag warn';
+  }
+
+  let html='<div class="result">'+
+    '<span class="'+tag+'">'+title+'</span>'+
+    '<div class="big">'+money(newDaily)+'/dia</div>'+
+    '<p>Antes: <b>'+money(state.recommended)+'/dia</b><br>'+
+    'Depois da compra: <b>'+money(newDaily)+'/dia</b><br>'+
+    'Dinheiro livre depois: <b>'+money(newFree)+'</b></p>';
+
+  html+='<button class="btn good" onclick="confirmPurchase('+p+')">CONFIRMAR COMPRA E ATUALIZAR</button>';
+  html+='</div>';
+
+  result.innerHTML=html;
+}
+
 function show(id){
   document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
   const target=document.getElementById(id);
@@ -1004,6 +1254,7 @@ function show(id){
   if(id==='commitments')renderCommitments();
   if(id==='history')renderHistory();
   if(id==='goals')renderGoals();
+  if(id==='rescue')renderRescue();
   if(id==='buy')document.getElementById('buyResult').innerHTML='';
   window.scrollTo({top:0,behavior:'smooth'});
 }
