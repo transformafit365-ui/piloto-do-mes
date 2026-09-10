@@ -107,6 +107,16 @@ button:active{transform:scale(.98)}
 }
 </style>
 
+
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#111522">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+#installApp{display:none;margin-top:10px}
+.pwa-tip{font-size:11px;color:var(--muted);text-align:center;margin:12px 4px 0;line-height:1.4}
+</style>
 </head>
 
 <body>
@@ -184,6 +194,9 @@ button:active{transform:scale(.98)}
       </div>
 
       <div id="decisionCard" class="insight"></div>
+      <button id="installApp" class="btn secondary" type="button">📲 INSTALAR O PILOTO NO CELULAR</button>
+      <div id="pwaTip" class="pwa-tip">Depois de instalado, o Piloto abre como um aplicativo.</div>
+
 
       <div class="section-title">Ações rápidas</div>
       <div class="action-grid">
@@ -1427,6 +1440,32 @@ db.auth.onAuthStateChange(async (event,session)=>{
     document.getElementById('authMessage').textContent='Não foi possível conectar ao sistema. Verifique a configuração do Supabase.';
   }
 })();
+</script>
+
+<script>
+window.__pilotoPWAInstall = null;
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+}
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  window.__pilotoPWAInstall = e;
+  const b = document.getElementById("installApp");
+  if (b) b.style.display = "block";
+});
+window.addEventListener("appinstalled", () => {
+  const b = document.getElementById("installApp");
+  if (b) b.style.display = "none";
+  window.__pilotoPWAInstall = null;
+});
+document.addEventListener("click", async (e) => {
+  if (e.target && e.target.id === "installApp" && window.__pilotoPWAInstall) {
+    const p = window.__pilotoPWAInstall;
+    window.__pilotoPWAInstall = null;
+    await p.prompt();
+    if (p.userChoice) await p.userChoice;
+  }
+});
 </script>
 </body>
   </html>
