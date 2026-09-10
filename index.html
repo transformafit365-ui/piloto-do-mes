@@ -151,6 +151,7 @@ input:focus{border-color:var(--accent)}
         <button class="action" onclick="show('history')"><span>📜</span>Histórico<small>Ver movimentações</small></button>
         <button class="action" onclick="show('goals')"><span>🎯</span>Metas<small>Guardar para objetivos</small></button>
         <button class="action" onclick="show('rescue')"><span>🚨</span>Modo Socorro<small>Quando o mês apertar</small></button>
+        <button class="action" onclick="show('brain')"><span>🧠</span>Meu Piloto<small>Análise inteligente</small></button>
       </div>
 
       <div style="margin-top:14px">
@@ -245,6 +246,13 @@ input:focus{border-color:var(--accent)}
       <h1>Modo Socorro.</h1>
       <p class="sub">Quando o dinheiro aperta, o Piloto troca a bússola por um plano de emergência.</p>
       <div id="rescueResult"></div>
+    </section>
+
+    <section id="brain" class="screen">
+      <button class="back" onclick="show('home')">← Voltar</button>
+      <h1>Meu Piloto.</h1>
+      <p class="sub">Uma leitura inteligente do seu mês para ajudar nas decisões.</p>
+      <div id="brainResult"></div>
     </section>
 
     <section id="goals" class="screen">
@@ -1243,6 +1251,78 @@ function simulate(){
   result.innerHTML=html;
 }
 
+
+function intelligenceScore(){
+  if(!state)return 0;
+  let score=100;
+  if(state.safetyLevel==='warn')score-=20;
+  if(state.safetyLevel==='bad')score-=50;
+  if(state.dailyReal>0 && state.dailyReal>state.recommended){
+    score-=Math.min(25,Math.round((state.dailyReal-state.recommended)*.5));
+  }
+  if(state.nextCommitment && daysUntil(state.nextCommitment.due_date)<=2)score-=10;
+  return Math.max(0,Math.min(100,Math.round(score)));
+}
+
+function renderBrain(){
+  const r=document.getElementById('brainResult');
+  if(!r)return;
+  if(!state){
+    r.innerHTML='<div class="result"><p>Configure seu mês primeiro.</p></div>';
+    return;
+  }
+
+  const transactions=allTransactions();
+  const expenses=transactions.filter(x=>x.type==='expense');
+  const totalExpense=expenses.reduce((a,x)=>a+x.amount,0);
+  const elapsed=Math.max(1,30-state.days);
+  const dailySpend=totalExpense/elapsed;
+  const score=intelligenceScore();
+
+  let tag='tag',label='🟢 MÊS BEM ENCAMINHADO';
+  if(score<70){tag='tag warn';label='🟡 PRECISA DE AJUSTE';}
+  if(score<45){tag='tag bad';label='🔴 ATENÇÃO MÁXIMA';}
+
+  let advice;
+  if(state.safetyLevel==='bad'){
+    advice='Sua prioridade agora é proteger o dinheiro necessário até o próximo recebimento.';
+  }else if(dailySpend>state.recommended){
+    advice='Seu ritmo de gastos está acima do ritmo seguro. Reduza as despesas variáveis nos próximos dias.';
+  }else if(state.nextCommitment && daysUntil(state.nextCommitment.due_date)<=3){
+    advice='Há um vencimento próximo. Evite assumir novos gastos grandes até essa conta passar.';
+  }else{
+    advice='Seu cenário está equilibrado. Continue registrando gastos e transforme parte da margem em segurança ou meta.';
+  }
+
+  const next=state.nextCommitment
+    ? '<p>Próxima conta: <b>'+escapeHtml(state.nextCommitment.description)+'</b> de <b>'+money(state.nextCommitment.amount)+'</b>, em <b>'+daysUntil(state.nextCommitment.due_date)+' dias</b>.</p>'
+    : '<p>Nenhuma conta futura próxima cadastrada.</p>';
+
+  const difference=Math.max(0,dailySpend-state.recommended);
+
+  r.innerHTML=
+    '<div class="result">'+
+      '<span class="'+tag+'">'+label+'</span>'+
+      '<h3>Nota do seu mês</h3>'+
+      '<div class="big">'+score+'/100</div>'+
+      '<p>'+escapeHtml(advice)+'</p>'+
+      '<div class="grid">'+
+        '<div class="card"><div class="label">Seu ritmo</div><div class="value">'+money(dailySpend)+'/dia</div></div>'+
+        '<div class="card"><div class="label">Ritmo seguro</div><div class="value">'+money(state.recommended)+'/dia</div></div>'+
+        '<div class="card"><div class="label">Gastos</div><div class="value">'+money(totalExpense)+'</div></div>'+
+        '<div class="card"><div class="label">Livre</div><div class="value">'+money(state.free)+'</div></div>'+
+      '</div>'+
+      next+
+      '<div class="section-title">O que eu faria no seu lugar?</div>'+
+      '<p><b>'+escapeHtml(state.brainMessage)+'</b></p>'+
+      (difference>0
+        ? '<p>Para voltar ao ritmo seguro, reduza cerca de <b>'+money(difference)+'/dia</b>.</p>'
+        : '<p>Você está dentro do ritmo seguro. Não precisa fazer um corte adicional agora.</p>')+
+      '<button class="btn secondary" onclick="show(\'rescue\')">ABRIR MODO SOCORRO</button>'+
+    '</div>';
+}
+
+
 function show(id){
   document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
   const target=document.getElementById(id);
@@ -1255,6 +1335,7 @@ function show(id){
   if(id==='history')renderHistory();
   if(id==='goals')renderGoals();
   if(id==='rescue')renderRescue();
+  if(id==='brain')renderBrain();
   if(id==='buy')document.getElementById('buyResult').innerHTML='';
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -1299,4 +1380,4 @@ db.auth.onAuthStateChange(async (event,session)=>{
 })();
 </script>
 </body>
-</html>
+        </html>
