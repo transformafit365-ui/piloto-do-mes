@@ -1,0 +1,10 @@
+{
+  "name": "Piloto do Mês",
+  "short_name": "Piloto",
+  "description": "Descubra quanto você pode gastar hoje sem faltar dinheiro antes do próximo pagamento.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b0d12",
+  "theme_color": "#111522",
+  "orientation": "portrait"
+}
