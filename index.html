@@ -117,6 +117,22 @@ button:active{transform:scale(.98)}
 #installApp{display:none;margin-top:10px}
 .pwa-tip{font-size:11px;color:var(--muted);text-align:center;margin:12px 4px 0;line-height:1.4}
 </style>
+
+<style>
+.plan-card{border:1px solid var(--line);background:var(--card);border-radius:22px;padding:18px;margin:12px 0}
+.plan-card.featured{border-color:var(--accent);box-shadow:0 10px 35px rgba(0,0,0,.18)}
+.plan-price{font-size:31px;font-weight:950;margin:7px 0}
+.plan-price small{font-size:12px;color:var(--muted);font-weight:700}
+.plan-list{margin:12px 0 0;padding:0;list-style:none}
+.plan-list li{padding:7px 0;color:var(--muted);font-size:13px}
+.plan-list li:before{content:"✓ ";color:var(--good);font-weight:900}
+.plan-pill{display:inline-block;padding:5px 9px;border-radius:999px;background:var(--card2);color:var(--accent);font-size:10px;font-weight:900;text-transform:uppercase}
+.locked{opacity:.92}
+.locked .lock{float:right}
+.banner-premium{background:linear-gradient(135deg,#19152d,#111522);border:1px solid var(--accent);border-radius:20px;padding:16px;margin:12px 0}
+.banner-premium h3{margin:0 0 5px}
+.banner-premium p{margin:0;color:var(--muted);font-size:12px;line-height:1.45}
+</style>
 </head>
 
 <body>
@@ -1466,6 +1482,85 @@ document.addEventListener("click", async (e) => {
     if (p.userChoice) await p.userChoice;
   }
 });
+</script>
+
+<section id="plans" class="screen">
+  <div class="top"><button class="back" onclick="show('home')">←</button><div><h2>💎 Meu plano</h2><p class="sub">Escolha o nível do seu Piloto.</p></div></div>
+
+  <div class="banner-premium">
+    <span class="plan-pill" id="currentPlanPill">PLANO ATUAL</span>
+    <h3 id="currentPlanTitle">Piloto Gratuito</h3>
+    <p id="currentPlanText">Você já tem acesso ao núcleo do Piloto. O Premium será liberado com recursos avançados.</p>
+  </div>
+
+  <div class="plan-card">
+    <span class="plan-pill">GRÁTIS</span>
+    <h3>Piloto Free</h3>
+    <div class="plan-price">R$ 0 <small>/sempre</small></div>
+    <ul class="plan-list">
+      <li>Limite recomendado de hoje</li>
+      <li>Registro de gastos e recebimentos</li>
+      <li>Simulação de compra</li>
+      <li>Contas futuras</li>
+      <li>Histórico básico</li>
+      <li>Metas</li>
+    </ul>
+    <button class="btn secondary" onclick="activateFreePlan()">USAR PLANO GRÁTIS</button>
+  </div>
+
+  <div class="plan-card featured">
+    <span class="plan-pill">PREMIUM</span>
+    <h3>🚀 Piloto Premium</h3>
+    <div class="plan-price">R$ 9,90 <small>/mês</small></div>
+    <ul class="plan-list">
+      <li>Análise financeira avançada</li>
+      <li>Cérebro financeiro completo</li>
+      <li>Modo Socorro inteligente</li>
+      <li>Projeções e decisões avançadas</li>
+      <li>Recursos futuros exclusivos</li>
+    </ul>
+    <button class="btn primary" onclick="showPremiumComingSoon()">QUERO SER PREMIUM</button>
+    <p class="quick-note" style="margin-top:9px">O pagamento ainda será conectado na próxima etapa. Não será cobrado nada nesta versão.</p>
+  </div>
+</section>
+
+
+<script>
+function getDemoPlan(){
+  return localStorage.getItem("piloto_demo_plan") || "free";
+}
+function renderPlan(){
+  const plan=getDemoPlan();
+  const pill=document.getElementById("currentPlanPill");
+  const title=document.getElementById("currentPlanTitle");
+  const text=document.getElementById("currentPlanText");
+  if(!pill||!title||!text)return;
+  if(plan==="premium"){
+    pill.textContent="PREMIUM ATIVO • DEMO";
+    title.textContent="Piloto Premium";
+    text.textContent="Premium ativado apenas para demonstração. O pagamento real será conectado na V11.";
+  }else{
+    pill.textContent="PLANO ATUAL";
+    title.textContent="Piloto Gratuito";
+    text.textContent="Você já tem acesso ao núcleo do Piloto. O Premium será liberado com recursos avançados.";
+  }
+}
+function activateFreePlan(){
+  localStorage.setItem("piloto_demo_plan","free");
+  renderPlan();
+  if(typeof toast==="function")toast("Plano gratuito selecionado.");
+}
+function showPremiumComingSoon(){
+  localStorage.setItem("piloto_demo_plan","premium");
+  renderPlan();
+  if(typeof toast==="function")toast("Premium ativado em modo demonstração. Nenhum pagamento foi realizado.");
+}
+const _showOriginal = window.show;
+window.show = function(id){
+  if(typeof _showOriginal==="function") _showOriginal(id);
+  if(id==="plans") setTimeout(renderPlan,30);
+};
+window.addEventListener("load", renderPlan);
 </script>
 </body>
   </html>
