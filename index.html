@@ -74,6 +74,39 @@ input:focus{border-color:var(--accent)}
 .loading{text-align:center;color:var(--muted);padding:40px 0}.empty{text-align:center;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:15px;padding:18px}
 .list{display:grid;gap:9px;margin-top:12px}.item{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:15px;padding:13px}.item strong{display:block}.item small{color:var(--muted)}.item button{background:none;border:0;color:var(--bad);font-size:12px;font-weight:800}.date{font-size:11px;color:var(--muted);margin-top:3px}
 </style>
+
+<style>
+/* V8 PREMIUM EXPERIENCE */
+.hero{position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;inset:-60px auto auto 55%;width:180px;height:180px;border-radius:50%;background:rgba(124,92,255,.12);filter:blur(8px);pointer-events:none}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--accent);font-weight:900;margin-bottom:8px}
+.quick-note{font-size:12px;color:var(--muted);line-height:1.45}
+.metric-positive{color:var(--good)!important}
+.metric-warning{color:var(--warn)!important}
+.metric-danger{color:var(--bad)!important}
+.progress{height:9px;background:var(--card2);border:1px solid var(--line);border-radius:99px;overflow:hidden;margin-top:9px}
+.progress>div{height:100%;border-radius:99px;background:var(--accent);transition:width .35s ease}
+.hero .amount{font-size:54px}
+.premium-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.score-badge{min-width:62px;text-align:center;border:1px solid var(--line);background:var(--card2);border-radius:17px;padding:9px 8px}
+.score-badge strong{font-size:21px;display:block}
+.score-badge small{font-size:9px;color:var(--muted)}
+.insight{background:linear-gradient(145deg,#171b29,#10131a);border:1px solid var(--line);border-radius:21px;padding:18px;margin-top:12px}
+.insight h3{margin:0 0 6px}
+.insight p{color:var(--muted);line-height:1.5;font-size:13px;margin:7px 0}
+.kicker{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:800}
+.feature-card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:17px}
+.feature-card h3{margin:0 0 6px;font-size:15px}
+.feature-card p{margin:0;color:var(--muted);font-size:12px;line-height:1.45}
+button{transition:transform .12s ease,opacity .12s ease}
+button:active{transform:scale(.98)}
+.empty{line-height:1.5}
+@media (max-width:380px){
+  .hero .amount{font-size:45px}
+  h1{font-size:31px}
+}
+</style>
+
 </head>
 
 <body>
@@ -123,13 +156,22 @@ input:focus{border-color:var(--accent)}
   <div id="mainApp" style="display:none">
 
     <section id="home" class="screen active">
+      <div class="eyebrow">PILOTO DO MÊS</div>
       <h1>Quanto você pode gastar hoje?</h1>
-      <p class="sub">O Piloto olha para o seu dinheiro e para o que ainda vem pela frente.</p>
+      <p class="sub">Uma decisão por vez. O Piloto olha seu dinheiro e o que ainda vem pela frente.</p>
 
       <div class="hero">
-        <div class="label">LIMITE RECOMENDADO HOJE</div>
-        <div class="amount" id="daily">R$ 0,00</div>
-        <div class="status"><span class="dot" id="statusDot"></span><span id="status">Configure seu mês para começar</span></div>
+        <div class="premium-head">
+          <div>
+            <div class="label">LIMITE RECOMENDADO HOJE</div>
+            <div class="amount" id="daily">R$ 0,00</div>
+            <div class="status"><span class="dot" id="statusDot"></span><span id="status">Configure seu mês para começar</span></div>
+          </div>
+          <div class="score-badge">
+            <strong id="homeScore">--</strong>
+            <small>SAÚDE</small>
+          </div>
+        </div>
       </div>
 
       <div id="brainCard" class="result" style="margin-top:12px"></div>
@@ -140,6 +182,8 @@ input:focus{border-color:var(--accent)}
         <div class="card"><div class="label">Compromissos</div><div class="value" id="bills">R$ 0,00</div></div>
         <div class="card"><div class="label">Até receber</div><div class="value" id="days">0 dias</div></div>
       </div>
+
+      <div id="decisionCard" class="insight"></div>
 
       <div class="section-title">Ações rápidas</div>
       <div class="action-grid">
@@ -162,7 +206,11 @@ input:focus{border-color:var(--accent)}
     <section id="setup" class="screen">
       <button class="back" onclick="show('home')">← Voltar</button>
       <h1>Vamos pilotar seu mês.</h1>
-      <p class="sub">Você controla os dados. O Piloto faz as contas.</p>
+      <p class="sub">Você controla os dados. O Piloto transforma esses dados em decisões mais claras.</p>
+      <div class="feature-card" style="margin-bottom:16px">
+        <h3>🎯 A regra do Piloto</h3>
+        <p>Não prometemos fazer dinheiro aparecer. A proposta é mostrar, com clareza, o que seu dinheiro permite hoje sem sacrificar o que vem depois.</p>
+      </div>
 
       <div class="field"><label>Quanto você tem disponível agora?</label><input id="balance" inputmode="decimal" placeholder="Ex.: 2500"></div>
       <div class="row">
@@ -1305,6 +1353,7 @@ function renderBrain(){
       '<span class="'+tag+'">'+label+'</span>'+
       '<h3>Nota do seu mês</h3>'+
       '<div class="big">'+score+'/100</div>'+
+      '<div class="progress"><div style="width:'+score+'%"></div></div>'+
       '<p>'+escapeHtml(advice)+'</p>'+
       '<div class="grid">'+
         '<div class="card"><div class="label">Seu ritmo</div><div class="value">'+money(dailySpend)+'/dia</div></div>'+
@@ -1380,4 +1429,4 @@ db.auth.onAuthStateChange(async (event,session)=>{
 })();
 </script>
 </body>
-        </html>
+  </html>
