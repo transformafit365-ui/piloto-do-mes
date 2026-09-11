@@ -1682,6 +1682,15 @@ let state=null;
 let billingPlan='free';
 let billingStatus='inactive';
 
+// Mantém a referência do dia estável durante toda a sessão.
+// Isso evita pequenas variações de cálculo causadas por múltiplos recalc().
+let calculationDateKey=null;
+let mutationLocks={
+  expense:false,
+  income:false,
+  purchase:false
+};
+
 document.addEventListener(
   'visibilitychange',
   async()=>{
@@ -2304,11 +2313,33 @@ throw error;
 
 }
 
-function daysUntil(date){
+function getCalculationToday(){
 
 const now=new Date();
 
-now.setHours(0,0,0,0);
+const key=
+now.getFullYear()+'-'+
+String(now.getMonth()+1).padStart(2,'0')+'-'+
+String(now.getDate()).padStart(2,'0');
+
+if(calculationDateKey!==key){
+  calculationDateKey=key;
+}
+
+const today=new Date(
+  now.getFullYear(),
+  now.getMonth(),
+  now.getDate(),
+  0,0,0,0
+);
+
+return today;
+
+}
+
+function daysUntil(date){
+
+const now=getCalculationToday();
 
 const d=
 new Date(date+'T00:00:00');
@@ -2342,9 +2373,7 @@ state.balance+
 totalIncome-
 totalExpenses;
 
-const today=new Date();
-
-today.setHours(0,0,0,0);
+const today=getCalculationToday();
 
 const payday=
 new Date(state.payday+'T00:00:00');
@@ -2791,6 +2820,8 @@ humanError(error)
 
 async function addExpense(){
 
+if(mutationLocks.expense)return;
+
 if(!state){
 show('setup');
 return;
@@ -2813,6 +2844,8 @@ toast('Informe um valor válido.');
 return;
 
 }
+
+mutationLocks.expense=true;
 
 try{
 
@@ -2872,11 +2905,17 @@ toast(
 humanError(error)
 );
 
+}finally{
+
+mutationLocks.expense=false;
+
 }
 
 }
 
 async function addIncome(){
+
+if(mutationLocks.income)return;
 
 if(!state){
 show('setup');
@@ -2900,6 +2939,8 @@ toast('Informe um valor válido.');
 return;
 
 }
+
+mutationLocks.income=true;
 
 try{
 
@@ -2958,6 +2999,10 @@ toast(
 'Não foi possível registrar: '+
 humanError(error)
 );
+
+}finally{
+
+mutationLocks.income=false;
 
 }
 
@@ -3059,12 +3104,16 @@ result.innerHTML=html;
 
 async function confirmPurchase(value){
 
+if(mutationLocks.purchase)return;
+
 if(
 !state||
 value<=0||
 value>state.free
 )
 return;
+
+mutationLocks.purchase=true;
 
 try{
 
@@ -3118,6 +3167,10 @@ toast(
 'Não foi possível confirmar: '+
 humanError(error)
 );
+
+}finally{
+
+mutationLocks.purchase=false;
 
 }
 
