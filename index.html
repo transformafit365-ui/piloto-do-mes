@@ -2186,7 +2186,8 @@ await db
 .from('transactions')
 .select('*')
 .eq('user_id',user.id)
-.order('created_at',{ascending:true});
+.order('created_at',{ascending:true})
+.order('id',{ascending:true});
 
 if(txError)
 throw txError;
@@ -2315,25 +2316,28 @@ throw error;
 
 function getCalculationToday(){
 
+/*
+ * A data de cálculo é determinada uma única vez por carregamento.
+ * Recarregar a página no mesmo dia não pode alterar os números.
+ */
+if(calculationDateKey){
+  const parts=calculationDateKey.split('-').map(Number);
+  return new Date(parts[0],parts[1]-1,parts[2],0,0,0,0);
+}
+
 const now=new Date();
 
-const key=
+calculationDateKey=
 now.getFullYear()+'-'+
 String(now.getMonth()+1).padStart(2,'0')+'-'+
 String(now.getDate()).padStart(2,'0');
 
-if(calculationDateKey!==key){
-  calculationDateKey=key;
-}
-
-const today=new Date(
+return new Date(
   now.getFullYear(),
   now.getMonth(),
   now.getDate(),
   0,0,0,0
 );
-
-return today;
 
 }
 
@@ -2353,6 +2357,31 @@ Math.ceil((d-now)/86400000)
 
 }
 
+function calculateCurrentBalance(){
+
+if(!state)return 0;
+
+const totalExpenses=
+(state.expenses||[])
+.reduce((total,item)=>
+  total+(Number(item.value)||0),
+  0
+);
+
+const totalIncome=
+(state.extraIncome||[])
+.reduce((total,item)=>
+  total+(Number(item.value)||0),
+  0
+);
+
+return
+(Number(state.balance)||0)+
+ totalIncome-
+ totalExpenses;
+
+}
+
 function recalc(){
 
 if(!state)return;
@@ -2362,16 +2391,13 @@ daysUntil(state.payday);
 
 const totalExpenses=
 (state.expenses||[])
-.reduce((a,x)=>a+x.value,0);
+.reduce((a,x)=>a+(Number(x.value)||0),0);
 
 const totalIncome=
 (state.extraIncome||[])
-.reduce((a,x)=>a+x.value,0);
+.reduce((a,x)=>a+(Number(x.value)||0),0);
 
-const current=
-state.balance+
-totalIncome-
-totalExpenses;
+const current=calculateCurrentBalance();
 
 const today=getCalculationToday();
 
@@ -2637,7 +2663,11 @@ money(state.recommended);
 
 document.getElementById('free')
 .textContent=
-money(state.current);
+money(
+  Number.isFinite(Number(state.current))
+  ? Number(state.current)
+  : 0
+);
 
 document.getElementById('reserve')
 .textContent=
