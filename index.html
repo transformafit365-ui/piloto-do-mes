@@ -937,7 +937,7 @@ SAÚDE
 <div class="grid">
 
 <div class="card">
-<div class="label">Dinheiro livre</div>
+<div class="label">Saldo atual</div>
 <div class="value" id="free">R$ 0,00</div>
 </div>
 
@@ -2608,7 +2608,7 @@ money(state.recommended);
 
 document.getElementById('free')
 .textContent=
-money(state.free);
+money(state.current);
 
 document.getElementById('reserve')
 .textContent=
@@ -2850,7 +2850,9 @@ document.getElementById('expenseResult')
 '<div class="big">'+
 money(state.recommended)+'/dia'+
 '</div>'+
-'<p>Seu novo limite recomendado foi recalculado.</p>'+
+'<p>Limite recomendado por dia.</p>'+
+'<p>Saldo atual: <b>'+money(state.current)+'</b><br>'+
+'Dinheiro livre: <b>'+money(state.free)+'</b></p>'+
 '</div>';
 
 document.getElementById('expenseValue')
@@ -2931,11 +2933,13 @@ recalc();
 document.getElementById('incomeResult')
 .innerHTML=
 '<div class="result">'+
-'<span class="tag">ATUALIZADO</span>'+
+'<span class="tag">ENTRADA REGISTRADA</span>'+
 '<div class="big">'+
-money(state.recommended)+'/dia'+
+money(state.current)+
 '</div>'+
-'<p>Seu limite aumentou de acordo com a nova entrada.</p>'+
+'<p>Saldo atual após receber <b>'+money(value)+'</b>.</p>'+
+'<p>Limite recomendado: <b>'+money(state.recommended)+'/dia</b><br>'+
+'Dinheiro livre: <b>'+money(state.free)+'</b></p>'+
 '</div>';
 
 document.getElementById('incomeValue')
