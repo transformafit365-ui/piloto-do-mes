@@ -4382,10 +4382,31 @@ if('serviceWorker' in navigator){
 
 window.addEventListener(
 'load',
-()=>{
-navigator.serviceWorker
-.register('./sw.js')
-.catch(()=>{});
+async()=>{
+
+try{
+
+const registrations=
+await navigator.serviceWorker.getRegistrations();
+
+for(const registration of registrations){
+try{
+await registration.update();
+}catch(error){}
+}
+
+await navigator.serviceWorker
+.register('./sw.js?v=20260911-01',{
+updateViaCache:'none'
+});
+
+}catch(error){
+console.warn(
+'PWA:',
+error.message
+);
+}
+
 }
 );
 
