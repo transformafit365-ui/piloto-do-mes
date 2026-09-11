@@ -1544,6 +1544,52 @@ const SUPABASE_PUBLISHABLE_KEY =
 
 let refreshingSessionPromise=null;
 
+async function ensureFreshSession(){
+
+  if(!refreshingSessionPromise){
+    refreshingSessionPromise=(async()=>{
+
+      const current=await db.auth.getSession();
+      const currentError=current?.error;
+
+      if(currentError){
+        throw currentError;
+      }
+
+      let session=current?.data?.session||null;
+
+      if(!session){
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+
+      const expiresAt=Number(session.expires_at||0);
+      const now=Math.floor(Date.now()/1000);
+
+      if(!expiresAt || expiresAt <= now+120){
+        const refreshed=await db.auth.refreshSession();
+
+        if(refreshed?.error){
+          throw refreshed.error;
+        }
+
+        session=refreshed?.data?.session||null;
+
+        if(!session?.access_token){
+          throw new Error('Não foi possível renovar a sessão. Faça login novamente.');
+        }
+      }
+
+      user=session.user;
+      return session;
+
+    })().finally(()=>{
+      refreshingSessionPromise=null;
+    });
+  }
+
+  return refreshingSessionPromise;
+}
+
 const nativeFetch=
 window.fetch.bind(window);
 
@@ -2129,6 +2175,7 @@ await loadBillingStatus();
 
 try{
 
+await ensureFreshSession();
 await loadUserData();
 
 document.getElementById('loadingBox')
@@ -2879,6 +2926,8 @@ mutationLocks.expense=true;
 
 try{
 
+await ensureFreshSession();
+
 const {data,error}=
 await db
 .from('transactions')
@@ -2973,6 +3022,8 @@ return;
 mutationLocks.income=true;
 
 try{
+
+await ensureFreshSession();
 
 const {data,error}=
 await db
@@ -4324,18 +4375,25 @@ x.style.display='none';
 db.auth.onAuthStateChange(
 async(event,session)=>{
 
-if(
-session &&
-session.user &&
-!user
-){
+if(session?.user){
 
 user=session.user;
 
-await ensureSubscription();
+if(
+event==='SIGNED_IN' &&
+!document.getElementById('appScreen').style.display
+){
 
+await ensureSubscription();
 await startApp();
 
+}
+
+}
+
+if(event==='SIGNED_OUT'){
+user=null;
+state=null;
 }
 
 }
@@ -4345,15 +4403,11 @@ await startApp();
 
 try{
 
-const {data}=
-await db.auth.getSession();
+const session=await ensureFreshSession();
 
-if(
-data.session &&
-data.session.user
-){
+if(session?.user){
 
-user=data.session.user;
+user=session.user;
 
 await ensureSubscription();
 
