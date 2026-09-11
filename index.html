@@ -1587,6 +1587,85 @@ async function ensureFreshSession(){
   return refreshingSessionPromise;
 }
 
+
+async function insertTransactionDirect(type, amount, description){
+  const session=await ensureFreshSession();
+
+  const endpoint=
+    SUPABASE_URL+
+    '/rest/v1/transactions';
+
+  const headers={
+    'apikey':SUPABASE_PUBLISHABLE_KEY,
+    'Authorization':'Bearer '+session.access_token,
+    'Content-Type':'application/json',
+    'Prefer':'return=representation'
+  };
+
+  let response=await nativeFetch(endpoint,{
+    method:'POST',
+    headers,
+    body:JSON.stringify({
+      user_id:session.user.id,
+      type,
+      amount:Number(amount),
+      description
+    }),
+    cache:'no-store'
+  });
+
+  if(response.status===401){
+    const refreshed=await db.auth.refreshSession();
+
+    if(refreshed?.error){
+      throw refreshed.error;
+    }
+
+    const newSession=refreshed?.data?.session;
+
+    if(!newSession?.access_token){
+      throw new Error('Sessão expirada. Faça login novamente.');
+    }
+
+    user=newSession.user;
+
+    response=await nativeFetch(endpoint,{
+      method:'POST',
+      headers:{
+        ...headers,
+        'Authorization':'Bearer '+newSession.access_token
+      },
+      body:JSON.stringify({
+        user_id:newSession.user.id,
+        type,
+        amount:Number(amount),
+        description
+      }),
+      cache:'no-store'
+    });
+  }
+
+  const raw=await response.text();
+
+  if(!response.ok){
+    let message=raw;
+    try{
+      const parsed=JSON.parse(raw);
+      message=parsed.message||parsed.hint||parsed.details||parsed.error||raw;
+    }catch(error){}
+    throw new Error(message||'Não foi possível registrar a transação.');
+  }
+
+  let rows=[];
+  try{
+    rows=raw?JSON.parse(raw):[];
+  }catch(error){
+    rows=[];
+  }
+
+  return Array.isArray(rows)?rows[0]:rows;
+}
+
 const nativeFetch=
 window.fetch.bind(window);
 
@@ -2925,20 +3004,11 @@ try{
 
 await ensureFreshSession();
 
-const {data,error}=
-await db
-.from('transactions')
-.insert({
-user_id:user.id,
-type:'expense',
-amount:value,
-description:name
-})
-.select()
-.single();
-
-if(error)
-throw error;
+const data=await insertTransactionDirect(
+'expense',
+value,
+name
+);
 
 state.expenses=
 state.expenses||[];
@@ -3022,20 +3092,11 @@ try{
 
 await ensureFreshSession();
 
-const {data,error}=
-await db
-.from('transactions')
-.insert({
-user_id:user.id,
-type:'income',
-amount:value,
-description:name
-})
-.select()
-.single();
-
-if(error)
-throw error;
+const data=await insertTransactionDirect(
+'income',
+value,
+name
+);
 
 state.extraIncome=
 state.extraIncome||[];
@@ -4430,95 +4491,30 @@ document.getElementById(
 window.__pilotoPWAInstall=null;
 
 if('serviceWorker' in navigator){
+  window.addEventListener(
+    'load',
+    async()=>{
+      try{
+        const registrations=
+          await navigator.serviceWorker.getRegistrations();
 
-window.addEventListener(
-'load',
-async()=>{
+        for(const registration of registrations){
+          try{
+            await registration.unregister();
+          }catch(error){}
+        }
 
-try{
+        const cacheNames=await caches.keys();
 
-const registrations=
-await navigator.serviceWorker.getRegistrations();
-
-for(const registration of registrations){
-try{
-await registration.update();
-}catch(error){}
+        await Promise.all(
+          cacheNames.map(name=>caches.delete(name))
+        );
+      }catch(error){
+        console.warn('PWA cleanup:',error.message);
+      }
+    }
+  );
 }
-
-await navigator.serviceWorker
-.register('./sw.js?v=20260911-01',{
-updateViaCache:'none'
-});
-
-}catch(error){
-console.warn(
-'PWA:',
-error.message
-);
-}
-
-}
-);
-
-}
-
-window.addEventListener(
-'beforeinstallprompt',
-e=>{
-
-e.preventDefault();
-
-window.__pilotoPWAInstall=e;
-
-const b=
-document.getElementById('installApp');
-
-if(b)
-b.style.display='block';
-
-}
-);
-
-window.addEventListener(
-'appinstalled',
-()=>{
-
-const b=
-document.getElementById('installApp');
-
-if(b)
-b.style.display='none';
-
-window.__pilotoPWAInstall=null;
-
-}
-);
-
-document.addEventListener(
-'click',
-async e=>{
-
-if(
-e.target &&
-e.target.id==='installApp' &&
-window.__pilotoPWAInstall
-){
-
-const p=
-window.__pilotoPWAInstall;
-
-window.__pilotoPWAInstall=null;
-
-await p.prompt();
-
-if(p.userChoice)
-await p.userChoice;
-
-}
-
-}
-);
 
 </script>
 
