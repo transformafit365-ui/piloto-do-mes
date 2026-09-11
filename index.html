@@ -69,3 +69,65 @@ async function startCheckout(){
   }
 
 }
+
+  try{
+
+    toast('Preparando seu checkout seguro... 💳');
+
+    const {
+      data,
+      error
+    } = await db.functions.invoke(
+      'mercadopago-checkout',
+      {
+        body:{}
+      }
+    );
+
+    if(error){
+
+      console.error('Erro Mercado Pago:',error);
+
+      throw error;
+
+    }
+
+    if(!data || !data.checkout_url){
+
+      console.error(
+        'Resposta inválida do checkout:',
+        data
+      );
+
+      throw new Error(
+        'O Mercado Pago não retornou o link de pagamento.'
+      );
+
+    }
+
+    toast(
+      'Checkout pronto. Redirecionando... 💳'
+    );
+
+    setTimeout(function(){
+
+      window.location.href =
+        data.checkout_url;
+
+    },700);
+
+  }catch(error){
+
+    console.error(
+      'Falha ao iniciar checkout:',
+      error
+    );
+
+    toast(
+      'Não foi possível abrir o pagamento: '+
+      humanError(error)
+    );
+
+  }
+
+}
