@@ -1550,10 +1550,9 @@ async function ensureFreshSession(){
     refreshingSessionPromise=(async()=>{
 
       const current=await db.auth.getSession();
-      const currentError=current?.error;
 
-      if(currentError){
-        throw currentError;
+      if(current?.error){
+        throw current.error;
       }
 
       let session=current?.data?.session||null;
@@ -1562,21 +1561,19 @@ async function ensureFreshSession(){
         throw new Error('Sessão expirada. Faça login novamente.');
       }
 
-      const expiresAt=Number(session.expires_at||0);
-      const now=Math.floor(Date.now()/1000);
+      // Para operações que alteram dados, sempre pedimos ao Supabase
+      // uma sessão atualizada. Isso elimina o cenário de JWT vencido
+      // mesmo quando o navegador ainda considera a sessão local válida.
+      const refreshed=await db.auth.refreshSession();
 
-      if(!expiresAt || expiresAt <= now+120){
-        const refreshed=await db.auth.refreshSession();
+      if(refreshed?.error){
+        throw refreshed.error;
+      }
 
-        if(refreshed?.error){
-          throw refreshed.error;
-        }
+      session=refreshed?.data?.session||null;
 
-        session=refreshed?.data?.session||null;
-
-        if(!session?.access_token){
-          throw new Error('Não foi possível renovar a sessão. Faça login novamente.');
-        }
+      if(!session?.access_token){
+        throw new Error('Não foi possível renovar a sessão. Faça login novamente.');
       }
 
       user=session.user;
